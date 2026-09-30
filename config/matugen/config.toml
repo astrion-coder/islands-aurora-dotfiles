@@ -1,0 +1,68 @@
+# Wallpaper -> system colour scheme.
+# Triggered automatically whenever the awww wallpaper changes
+# (~/.config/hypr/scripts/wallpaper-theme.sh), or manually:
+#   matugen image <wallpaper> --mode dark --source-color-index 0
+
+[config]
+
+# Fixed ANSI hues, shifted toward the wallpaper colour (terminal palette)
+[config.custom_colors]
+red     = "#e06c75"
+green   = "#98c379"
+yellow  = "#e5c07b"
+blue    = "#61afef"
+magenta = "#c678dd"
+cyan    = "#56b6c2"
+
+[templates.waybar]
+input_path  = '~/.config/matugen/templates/waybar-colors.css'
+output_path = '~/.config/waybar/colors.css'
+post_hook   = '~/.config/waybar/scripts/gen-icons.sh "{{colors.primary.default.hex}}" "{{colors.tertiary.default.hex}}" "{{colors.outline.default.hex}}" "{{colors.on_surface_variant.default.hex}}" "{{colors.error.default.hex}}" && pkill -SIGUSR2 -x waybar'
+
+[templates.hyprland]
+input_path  = '~/.config/matugen/templates/hyprland-colors.lua'
+output_path = '~/.config/hypr/colors.lua'
+post_hook   = 'hyprctl reload >/dev/null'
+
+[templates.hyprtoolkit]
+input_path  = '~/.config/matugen/templates/hyprtoolkit.conf'
+output_path = '~/.config/hypr/hyprtoolkit.conf'
+
+[templates.kitty]
+input_path  = '~/.config/matugen/templates/kitty-colors.conf'
+output_path = '~/.config/kitty/colors.conf'
+post_hook   = 'pkill -SIGUSR1 -x kitty; true'
+
+[templates.dunst]
+input_path  = '~/.config/matugen/templates/dunst.conf'
+output_path = '~/.config/dunst/dunstrc.d/50-matugen.conf'
+post_hook   = 'dunstctl reload 2>/dev/null; true'
+
+[templates.gtk3]
+input_path  = '~/.config/matugen/templates/gtk.css'
+output_path = '~/.config/gtk-3.0/gtk.css'
+
+[templates.gtk4]
+input_path  = '~/.config/matugen/templates/gtk.css'
+output_path = '~/.config/gtk-4.0/gtk.css'
+
+[templates.kde]
+input_path  = '~/.config/matugen/templates/kde-colors.colors'
+output_path = '~/.local/share/color-schemes/Matugen.colors'
+post_hook   = '~/.config/matugen/scripts/kde-apply-colors.py'
+
+[templates.qt6ct]
+input_path  = '~/.config/matugen/templates/qt6ct-colors.conf'
+output_path = '~/.config/qt6ct/colors/matugen.conf'
+
+[templates.bpytop]
+input_path  = '~/.config/matugen/templates/bpytop.theme'
+output_path = '~/.config/bpytop/themes/matugen.theme'
+
+[templates.rofi]
+input_path  = '~/.config/matugen/templates/rofi-colors.rasi'
+output_path = '~/.config/rofi/colors.rasi'
+
+[templates.zathura]
+input_path  = '~/.config/matugen/templates/zathurarc'
+output_path = '~/.config/zathura/zathurarc'

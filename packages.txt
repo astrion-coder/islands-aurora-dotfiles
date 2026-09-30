@@ -1,0 +1,78 @@
+# Islands Aurora — packages (all from the official Arch repositories; no AUR).
+# install.sh installs these with: sudo pacman -Syu --needed <list>
+# Lines starting with # are ignored.
+
+# --- Desktop: compositor, session, portals ---
+hyprland
+hyprlock
+hyprpolkitagent
+xdg-desktop-portal-hyprland
+xdg-desktop-portal-gtk
+uwsm
+polkit
+mesa
+
+# --- Login screen (SDDM runs its greeter on X11) ---
+sddm
+xorg-server
+qt6-declarative
+qt6-svg
+qt6-5compat
+
+# --- Wallpaper + wallpaper-derived colours ---
+awww
+matugen
+ffmpeg
+librsvg
+
+# --- Bar, launcher, notifications ---
+waybar
+rofi
+rofi-calc
+rofi-emoji
+cliphist
+wl-clipboard
+wtype
+fd
+libqalculate
+dunst
+libnotify
+
+# --- Apps ---
+kitty
+dolphin
+okular
+zathura
+zathura-pdf-mupdf
+firefox
+neovim
+bpytop
+
+# --- Qt / GTK theming ---
+qt5ct
+qt6ct
+kvantum
+kvantum-qt5
+adw-gtk-theme
+breeze-icons
+kconfig
+glib2
+
+# --- Fonts ---
+otf-droid-nerd
+noto-fonts
+
+# --- Audio / network / hardware keys ---
+pipewire
+pipewire-pulse
+wireplumber
+pavucontrol
+networkmanager
+network-manager-applet
+brightnessctl
+playerctl
+
+# --- Misc tools the scripts use ---
+python
+xdg-utils
+grim

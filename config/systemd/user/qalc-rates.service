@@ -1,0 +1,9 @@
+[Unit]
+Description=Update qalc exchange rates (used by the rofi calculator card)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+# -e: download current exchange rates into ~/.local/share/qalculate/, then evaluate "0" and exit
+ExecStart=/usr/bin/qalc -e -t 0
