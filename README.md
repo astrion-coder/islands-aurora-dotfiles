@@ -128,8 +128,9 @@ restart them; the bar, window borders, terminal and notifications update right a
 | GTK transparency | `window_bg_color` in `~/.config/matugen/templates/gtk.css` |
 | Login screen | `~/.config/sddm-theme/islands-aurora/Main.qml`, then `sudo ~/.config/sddm-theme/install.sh` |
 
-Fonts: the bar, launcher, login and lock screens use *DroidSansM Nerd Font*
-(`otf-droid-nerd`). Qt and GTK apps use *Noto Sans*.
+Fonts: the bar uses *Noto Sans* (`noto-fonts`). The launcher, login
+and lock screens and zathura use *DroidSansM Nerd Font* (`otf-droid-nerd`). Qt/KDE apps use *Noto Sans 9* (set in qt5ct/qt6ct). GTK apps, kitty
+and dunst keep their defaults (Adwaita Sans for GTK, the system monospace font for kitty).
 
 ## Notes
 

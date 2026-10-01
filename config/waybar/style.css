@@ -11,9 +11,10 @@
 @define-color edge_mid  rgba(255, 255, 255, 0.15);
 
 * {
-    font-family: "DroidSansM Nerd Font", sans-serif;
-    font-size: 13px;
-    font-weight: bold;
+    font-family: "Noto Sans", sans-serif;   /* same as VS Code's interface font */
+    font-size: 14px;
+    font-weight: 500;
+    font-feature-settings: "tnum";       /* fixed-width digits: numbers don't wobble */
     min-height: 0;
     border: none;
     border-radius: 0;
@@ -46,7 +47,7 @@ tooltip label {
 
 #workspaces-island,
 #window,
-#clock-island,
+#clock,
 #stats,
 #status,
 #custom-power {
@@ -72,7 +73,6 @@ tooltip label {
 
 /* ---------- Modules inside islands ---------- */
 
-#clock,
 #cpu,
 #memory,
 #custom-audio,
@@ -83,13 +83,18 @@ tooltip label {
     border-radius: 999px;
 }
 
-#clock:hover,
 #cpu:hover,
 #memory:hover,
 #custom-audio:hover,
 #battery:hover,
 #custom-power:hover {
     background-color: rgba(255, 255, 255, 0.12);
+}
+
+/* date/time are islands themselves: lighten on top of the glass instead of replacing
+ * it, so they stay frosted (a bare 12% fill is below the blur threshold) */
+#clock:hover {
+    background-image: linear-gradient(rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.12));
 }
 
 /* ---------- Workspaces ---------- */
@@ -110,7 +115,7 @@ tooltip label {
     border-radius: 999px;
     background-color: rgba(255, 255, 255, 0.14);   /* occupied */
     color: @fg;
-    font-size: 11px;
+    font-size: 12px;
     transition: all 0.2s ease;
 }
 
@@ -158,13 +163,18 @@ window#waybar.empty #window {
 
 /* ---------- Clock ---------- */
 
+/* date and time: two islands side by side (the whole island lights up on hover) */
+#clock {
+    padding: 0 14px;
+}
+
 #clock.date {
     color: @muted;
 }
 
 #clock.time {
     color: @fg;
-    font-size: 13.5px;
+    font-weight: 600;
 }
 
 /* ---------- SVG icons from ./icons, matching the design ---------- */
@@ -228,18 +238,20 @@ window#waybar.empty #window {
 
 #tray > widget {
     padding: 0;
-    margin: 4px 0;
-    border-radius: 999px;
+    margin: 0;
 }
 
 /* GtkEventBox ignores min-width/padding, so size the icon's box instead:
  * 14px icon + 10px either side, like the other module pills */
 #tray > widget > image {
     min-width: 34px;
+    min-height: 28px;
+    margin: 4px 0;          /* same inset as the other pills: hover doesn't touch the island edge */
     padding: 0;
+    border-radius: 999px;
 }
 
-#tray > widget:hover {
+#tray > widget:hover > image {
     background-color: rgba(255, 255, 255, 0.12);
 }
 

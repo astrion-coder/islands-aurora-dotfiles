@@ -111,7 +111,7 @@ end
 hl.config({
     general = {
         gaps_in  = 5,
-        gaps_out = 20,
+        gaps_out = 12,  -- windows to the bar / screen edges
 
         border_size = 0,  -- no focus border: focus is shown by dimming the others (decoration.dim_*)
 

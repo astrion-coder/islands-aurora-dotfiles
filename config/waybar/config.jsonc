@@ -14,7 +14,8 @@
         "hyprland/window"
     ],
     "modules-center": [
-        "group/clock-island"
+        "clock#date",
+        "clock#time"
     ],
     "modules-right": [
         "group/stats",
@@ -26,10 +27,6 @@
     "group/workspaces-island": {
         "orientation": "horizontal",
         "modules": ["custom/ws-daemon", "custom/ws1", "custom/ws2", "custom/ws3", "custom/ws4", "custom/ws5", "custom/ws6", "custom/ws7", "custom/ws8", "custom/ws9", "custom/ws10"]
-    },
-    "group/clock-island": {
-        "orientation": "horizontal",
-        "modules": ["clock#date", "clock#time"]
     },
     "group/stats": {
         "orientation": "horizontal",
@@ -103,8 +100,9 @@
         "max-length": 50,
         "separate-outputs": true
     },
+    // Date and time: two islands side by side in the middle of the bar
     "clock#date": {
-        "format": "{:%a %d %b}",
+        "format": "{:%a\u2002%d\u2004%b}",   // en space; narrower after the digits (they carry their own side spacing)
         "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>"
     },
     "clock#time": {
