@@ -1,4 +1,3 @@
-# WARNING: THIS HAS NOT BEEN TESTED YET. RUN AT YOUR OWN RISK.
 # Islands Aurora
 
 A complete Hyprland desktop for Arch Linux, themed from your wallpaper. Change the
