@@ -60,6 +60,7 @@ if [ $WITH_OPENSNITCH = 1 ] || command -v opensnitch-ui >/dev/null; then
 fi
 
 # paths that must be absolute
+mkdir -p "$HOME/.local/share/applications"
 grep -rl "__HOME__" "$HOME/.config/qt5ct" "$HOME/.config/qt6ct" "$HOME/.local/share/applications" 2>/dev/null \
     | xargs -r sed -i "s|__HOME__|$HOME|g"
 
