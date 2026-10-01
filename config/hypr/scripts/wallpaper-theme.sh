@@ -11,6 +11,16 @@ session="${XDG_RUNTIME_DIR}/hypr/${HYPRLAND_INSTANCE_SIGNATURE}"
 state=${XDG_CACHE_HOME:-$HOME/.cache}/wallpaper-theme.last
 login_bg=${XDG_CACHE_HOME:-$HOME/.cache}/login/background.jpg
 
+# Resident Qt tray apps only read colours at startup: restart them after a re-theme
+# (only if already running; the OpenSnitch firewall daemon itself is untouched)
+restart_tray_apps() {
+    local pid
+    pid=$(pgrep -f "^/usr/bin/python /usr/bin/opensnitch-ui") || return 0
+    kill $pid
+    for _ in $(seq 20); do kill -0 $pid 2>/dev/null || break; sleep 0.1; done
+    setsid -f "$HOME/.config/waybar/scripts/opensnitch-ui.sh" >/dev/null 2>&1
+}
+
 current() { awww query 2>/dev/null | sed -n 's/.*currently displaying: image: //p' | head -n1; }
 
 while [ -d "$session" ]; do
@@ -21,7 +31,8 @@ while [ -d "$session" ]; do
         matugen image "$img" --mode dark --source-color-index 0 >/dev/null 2>&1 \
             && printf '%s' "$img" > "$state" \
             && "$HOME/.config/sddm-theme/sync.sh" "$img" >/dev/null 2>&1 \
-            && "$HOME/.config/hypr/scripts/kvantum-theme.py" >/dev/null 2>&1   # login/lock screens, Okular's style
+            && "$HOME/.config/hypr/scripts/kvantum-theme.py" >/dev/null 2>&1 \
+            && restart_tray_apps                                              # login/lock screens, Qt style
     fi
     sleep 1
 done
