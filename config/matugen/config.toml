@@ -34,8 +34,8 @@ output_path = '~/.config/kitty/colors.conf'
 post_hook   = 'pkill -SIGUSR1 -x kitty; true'
 
 [templates.dunst]
-input_path  = '~/.config/matugen/templates/dunst.conf'
-output_path = '~/.config/dunst/dunstrc.d/50-matugen.conf'
+input_path  = '~/.config/matugen/templates/dunstrc'
+output_path = '~/.config/dunst/dunstrc'
 post_hook   = 'dunstctl reload 2>/dev/null; true'
 
 [templates.gtk3]

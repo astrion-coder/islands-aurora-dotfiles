@@ -421,6 +421,15 @@ hl.layer_rule({
     blur_popups  = true,  -- right-click / tray menus (power, nm-applet, ...) too
 })
 
+-- Blur behind notifications (dunst; translucent background in its matugen template)
+hl.layer_rule({
+    name  = "blur-notifications",
+    match = { namespace = "^notifications$" },
+
+    blur         = true,
+    ignore_alpha = 0.25,
+})
+
 -- Blur behind the rofi launcher (translucent background in rofi/theme.rasi)
 hl.layer_rule({
     name  = "blur-rofi",
