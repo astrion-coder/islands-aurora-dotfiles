@@ -7,6 +7,9 @@ notifications, login and lock screens.
 - **Frosted glass everywhere.** Backgrounds blur, text never does. Apps draw their own
   translucent backgrounds (GTK palette, a Kvantum style for Qt, kitty's opacity), and
   Hyprland blurs what shows through.
+- **Scrolling layout.** Windows sit side by side in columns on a strip that scrolls
+  horizontally, instead of being split into ever-smaller tiles. `Super+Shift+H/J/K/L`
+  swaps a window with its neighbour and both keep their sizes.
 - **Floating "island" bar.** Waybar pills for workspaces, window title, clock, stats,
   tray, sound and power, with line icons redrawn in the current palette.
 - **Raycast-style launcher.** One rofi menu for apps and commands: clipboard history,
