@@ -355,11 +355,12 @@ hl.bind("XF86AudioPause", hl.dsp.exec_cmd("playerctl play-pause"), { locked = tr
 hl.bind("XF86AudioPlay",  hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
 hl.bind("XF86AudioPrev",  hl.dsp.exec_cmd("playerctl previous"),   { locked = true })
 
--- Move focused window in a direction (requires table { direction = "..." })
-hl.bind("SUPER + SHIFT + H", hl.dsp.window.move({ direction = "left" }))
-hl.bind("SUPER + SHIFT + L", hl.dsp.window.move({ direction = "right" }))
-hl.bind("SUPER + SHIFT + K", hl.dsp.window.move({ direction = "up" }))
-hl.bind("SUPER + SHIFT + J", hl.dsp.window.move({ direction = "down" }))
+-- Swap the focused window with its neighbour in a direction: both keep their sizes
+-- (window.move would re-split the layout and shrink the window)
+hl.bind("SUPER + SHIFT + H", hl.dsp.window.swap({ direction = "left" }))
+hl.bind("SUPER + SHIFT + L", hl.dsp.window.swap({ direction = "right" }))
+hl.bind("SUPER + SHIFT + K", hl.dsp.window.swap({ direction = "up" }))
+hl.bind("SUPER + SHIFT + J", hl.dsp.window.swap({ direction = "down" }))
 
 -- Move focus between windows
 hl.bind("SUPER + H", hl.dsp.focus({ direction = "left" }))
