@@ -7,20 +7,23 @@
 #   --with-opensnitch   also install the OpenSnitch application firewall (themed tray icon)
 #   --no-packages       skip pacman (configs + theme only)
 #   --no-sddm           don't install/enable the SDDM login screen
+#   --no-zsh            keep your current shell and ~/.zshrc (no Oh My Zsh / fzf setup)
 #
-# Everything comes from the official Arch repositories (no AUR). Existing configs that
-# would be overwritten are copied to ~/.config-backup-<date>/ first.
+# Everything comes from the official Arch repositories (no AUR), plus Oh My Zsh, which is
+# cloned from GitHub. Existing configs that would be overwritten (and ~/.zshrc) are copied
+# to ~/.config-backup-<date>/ first.
 
 set -euo pipefail
 
 REPO=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-WITH_OPENSNITCH=0; DO_PACKAGES=1; DO_SDDM=1
+WITH_OPENSNITCH=0; DO_PACKAGES=1; DO_SDDM=1; DO_ZSH=1
 for arg in "$@"; do
     case $arg in
         --with-opensnitch) WITH_OPENSNITCH=1 ;;
         --no-packages)     DO_PACKAGES=0 ;;
         --no-sddm)         DO_SDDM=0 ;;
-        -h|--help)         sed -n '2,12p' "$0"; exit 0 ;;
+        --no-zsh)          DO_ZSH=0 ;;
+        -h|--help)         sed -n '2,14p' "$0"; exit 0 ;;
         *) echo "unknown option: $arg (see --help)" >&2; exit 1 ;;
     esac
 done
@@ -73,7 +76,31 @@ mkdir -p "$HOME/.cache/login"
 ln -sfn "$HOME/.cache/login" "$HOME/.config/sddm-theme/islands-aurora/dynamic"
 ln -sfn dynamic/theme.conf.user "$HOME/.config/sddm-theme/islands-aurora/theme.conf.user"
 
-# ---------------------------------------------------------------- 3. wallpaper + theme
+# ---------------------------------------------------------------- 3. shell
+if [ $DO_ZSH = 1 ]; then
+    say "Setting up zsh with Oh My Zsh and fzf"
+    if ! command -v zsh >/dev/null || ! command -v git >/dev/null; then
+        warn "zsh or git isn't installed; skipping the shell setup (run without --no-packages)"
+    else
+        if [ ! -d "$HOME/.oh-my-zsh" ]; then
+            git clone --quiet --depth 1 https://github.com/ohmyzsh/ohmyzsh.git "$HOME/.oh-my-zsh" \
+                || warn "couldn't clone Oh My Zsh; retry with: git clone https://github.com/ohmyzsh/ohmyzsh.git ~/.oh-my-zsh"
+        fi
+        if [ -e "$HOME/.zshrc" ] && ! cmp -s "$REPO/home/.zshrc" "$HOME/.zshrc"; then
+            mkdir -p "$backup"
+            cp -a "$HOME/.zshrc" "$backup/"
+            echo "  backup: $backup/.zshrc"
+        fi
+        cp "$REPO/home/.zshrc" "$HOME/.zshrc"
+        zsh_path=$(command -v zsh)
+        if [ "$(getent passwd "$(id -un)" | cut -d: -f7)" != "$zsh_path" ]; then
+            sudo chsh -s "$zsh_path" "$(id -un)"
+            echo "  default shell is now $zsh_path (from your next login)"
+        fi
+    fi
+fi
+
+# ---------------------------------------------------------------- 4. wallpaper + theme
 say "Picking a wallpaper and generating the colour theme from it"
 walls="$HOME/Pictures/Wallpapers"
 mkdir -p "$walls"
@@ -100,7 +127,7 @@ eval "$(sed -n 's/^@define-color \([a-z0-9]*\) *\(#[0-9a-fA-F]\{6\}\);/\1=\2/p' 
 "$HOME/.config/sddm-theme/sync.sh" "$wallpaper"
 [ -f "$HOME/.config/waybar/colors.css" ] || die "theme generation failed (is matugen installed?)"
 
-# ---------------------------------------------------------------- 4. app settings
+# ---------------------------------------------------------------- 5. app settings
 say "Applying app settings"
 # KDE apps apply their own colour scheme on top of Qt's: point them at the generated one
 for app in dolphinrc okularrc; do
@@ -118,7 +145,7 @@ dbus-run-session -- sh -c '
 # PDFs open in zathura (Okular stays available for annotating)
 xdg-mime default org.pwmt.zathura-pdf-mupdf.desktop application/pdf
 
-# ---------------------------------------------------------------- 5. services
+# ---------------------------------------------------------------- 6. services
 say "Enabling services"
 systemctl --user daemon-reload 2>/dev/null || true
 systemctl --user enable qalc-rates.timer 2>/dev/null \
@@ -138,6 +165,7 @@ cat <<'EOF'
   Super+Q      terminal (kitty)        Super+Space  launcher (apps, clipboard, emoji, files, calc)
   Super+E      files (Dolphin)         Super+Esc    lock screen
   Super+C      close window            Super+M      log out
+  In the terminal: Ctrl+R history, Ctrl+T files, Alt+C cd (fzf)
 
   Change wallpaper (and the whole colour theme):  awww img ~/Pictures/Wallpapers/<image>
 EOF

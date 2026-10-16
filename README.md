@@ -17,8 +17,11 @@ notifications, login and lock screens.
   conversions, time zones or AoE deadlines and press Enter for an answer card.
 - **Themed login and lock.** An SDDM theme on the blurred wallpaper and a matching
   hyprlock screen.
+- **zsh with Oh My Zsh and fzf.** zsh becomes your login shell, with autosuggestions,
+  syntax highlighting and fzf for files, history and directories, coloured from the wallpaper.
 
-Everything installs from the official Arch repositories. No AUR.
+Everything installs from the official Arch repositories. No AUR. The one exception is
+Oh My Zsh, which isn't packaged and is cloned from GitHub.
 
 ## Requirements
 
@@ -47,18 +50,22 @@ Options:
 | `--with-opensnitch` | Also install the OpenSnitch application firewall (themed shield in the tray) |
 | `--no-packages` | Skip `pacman`: only copy configs and generate the theme |
 | `--no-sddm` | Don't install or enable the SDDM login screen |
+| `--no-zsh` | Keep your current shell and `~/.zshrc` (no Oh My Zsh / fzf setup) |
 
 ### What `install.sh` does
 
 1. **Installs packages:** installs everything in [`packages.txt`](packages.txt) with `pacman -Syu --needed`.
 2. **Copies configs:** copies [`config/`](config) into `~/.config`. Any config it replaces is backed
    up first to `~/.config-backup-<date>/`.
-3. **Generates the theme:** uses the first image in `~/Pictures/Wallpapers`, or generates a soft
+3. **Sets up the shell:** clones [Oh My Zsh](https://ohmyz.sh) into `~/.oh-my-zsh` (if it isn't
+   there yet), installs [`home/.zshrc`](home/.zshrc) as `~/.zshrc` (backing up the old one) and
+   makes zsh your login shell.
+4. **Generates the theme:** uses the first image in `~/Pictures/Wallpapers`, or generates a soft
    gradient if there isn't one. [matugen](https://github.com/InioX/matugen) turns that image into
    a palette, which fills in every themed file.
-4. **Applies app settings:** sets the dark GTK/KDE preferences, makes zathura the PDF viewer, and
+5. **Applies app settings:** sets the dark GTK/KDE preferences, makes zathura the PDF viewer, and
    sets up Okular's highlighters.
-5. **Enables services:** NetworkManager, the polkit agent, a daily exchange-rate update for the
+6. **Enables services:** NetworkManager, the polkit agent, a daily exchange-rate update for the
    calculator, and the SDDM login screen.
 
 ## Keybindings
@@ -86,6 +93,24 @@ Options:
 | `Super+S` | Scratchpad |
 | `Super+D` | Restart the bar |
 
+## The shell
+
+zsh with Oh My Zsh (`avit` prompt, `git` plugin), plus
+[zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions) and
+[zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting) from the Arch
+repositories. fzf uses `fd`, so it includes hidden files and skips `.git`:
+
+| Keys | Action |
+|---|---|
+| `Ctrl+R` | Search shell history |
+| `Ctrl+T` | Insert files or folders into the command line |
+| `Alt+C` | `cd` into a folder |
+| `**` then `Tab` | fzf completion, e.g. `nvim **<Tab>`, `cd **<Tab>`, `kill **<Tab>` |
+| `→` / `End` | Accept the grey autosuggestion |
+
+Put your own aliases and settings in `~/.zshrc.local`. `~/.zshrc` loads it, and re-running
+`install.sh` never touches it, but it does replace `~/.zshrc`.
+
 ## The launcher
 
 Open it with `Super+Space` and start typing:
@@ -106,7 +131,7 @@ Open it with `Super+Space` and start typing:
 The local currency is set as `LOCAL_CURRENCY` near the top of
 [`config/rofi/scripts/evaluate.py`](config/rofi/scripts/evaluate.py) (default `inr`).
 Exchange rates come from `qalc`, and `qalc-rates.timer` refreshes them daily; that's the
-only automatic download.
+only automatic download (apart from Oh My Zsh's own update check).
 
 ## Changing the wallpaper
 
@@ -128,6 +153,7 @@ restart them; the bar, window borders, terminal and notifications update right a
 | How colours map to each app | `~/.config/matugen/templates/` (edit these, not the generated files) |
 | Qt transparency | `WINDOW_TRANSPARENCY` in `~/.config/hypr/scripts/kvantum-theme.py` |
 | GTK transparency | `window_bg_color` in `~/.config/matugen/templates/gtk.css` |
+| Shell prompt / plugins | `ZSH_THEME` and `plugins` in `~/.zshrc`; your own aliases in `~/.zshrc.local` |
 | Login screen | `~/.config/sddm-theme/islands-aurora/Main.qml`, then `sudo ~/.config/sddm-theme/install.sh` |
 
 Fonts: the bar uses *Noto Sans* (`noto-fonts`). The launcher, login

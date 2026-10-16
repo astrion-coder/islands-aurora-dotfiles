@@ -48,6 +48,14 @@ firefox
 neovim
 bpytop
 
+# --- Shell: zsh + Oh My Zsh (cloned by install.sh) + fzf ---
+zsh
+zsh-completions
+zsh-autosuggestions
+zsh-syntax-highlighting
+fzf
+git
+
 # --- Qt / GTK theming ---
 qt5ct
 qt6ct

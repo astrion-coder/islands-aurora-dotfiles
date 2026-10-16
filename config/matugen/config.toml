@@ -63,6 +63,10 @@ output_path = '~/.config/bpytop/themes/matugen.theme'
 input_path  = '~/.config/matugen/templates/rofi-colors.rasi'
 output_path = '~/.config/rofi/colors.rasi'
 
+[templates.fzf]
+input_path  = '~/.config/matugen/templates/fzf-colors'
+output_path = '~/.config/fzf/colors'
+
 [templates.zathura]
 input_path  = '~/.config/matugen/templates/zathurarc'
 output_path = '~/.config/zathura/zathurarc'
