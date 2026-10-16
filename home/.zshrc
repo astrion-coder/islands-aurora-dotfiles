@@ -5,7 +5,11 @@
 # ---------------------------------------------------------------- Oh My Zsh
 export ZSH="$HOME/.oh-my-zsh"
 ZSH_THEME="avit"
-plugins=(git)
+# vi keys on the command line: Esc for normal mode, `vv` to edit the command in nvim.
+# Beam cursor in insert mode, block in normal mode; Esc switches without a delay.
+VI_MODE_SET_CURSOR=true
+KEYTIMEOUT=1
+plugins=(git vi-mode)
 # extra completions (zsh-completions) are already on the default fpath
 source "$ZSH/oh-my-zsh.sh"
 

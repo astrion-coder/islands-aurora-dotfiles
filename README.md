@@ -95,7 +95,7 @@ Options:
 
 ## The shell
 
-zsh with Oh My Zsh (`avit` prompt, `git` plugin), plus
+zsh with Oh My Zsh (`avit` prompt, `git` and `vi-mode` plugins), plus
 [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions) and
 [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting) from the Arch
 repositories. fzf uses `fd`, so it includes hidden files and skips `.git`:
@@ -107,6 +107,8 @@ repositories. fzf uses `fd`, so it includes hidden files and skips `.git`:
 | `Alt+C` | `cd` into a folder |
 | `**` then `Tab` | fzf completion, e.g. `nvim **<Tab>`, `cd **<Tab>`, `kill **<Tab>` |
 | `→` / `End` | Accept the grey autosuggestion |
+| `Esc` | Vi normal mode (`hjkl`, `w`, `b`, `dd`, `ciw`, ...; `i` / `a` back to insert). `y` / `p` use the system clipboard |
+| `vv` (normal mode) | Edit the current command in nvim |
 
 Put your own aliases and settings in `~/.zshrc.local`. `~/.zshrc` loads it, and re-running
 `install.sh` never touches it, but it does replace `~/.zshrc`.
