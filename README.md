@@ -109,6 +109,7 @@ repositories. fzf uses `fd`, so it includes hidden files and skips `.git`:
 | `→` / `End` | Accept the grey autosuggestion |
 | `Esc` | Vi normal mode (`hjkl`, `w`, `b`, `dd`, `ciw`, ...; `i` / `a` back to insert). `y` / `p` use the system clipboard |
 | `vv` (normal mode) | Edit the current command in nvim |
+| `pacman -Ss <query>` | Browse packages in fzf with details alongside; `Tab` marks several, `Enter` installs them |
 
 Put your own aliases and settings in `~/.zshrc.local`. `~/.zshrc` loads it, and re-running
 `install.sh` never touches it, but it does replace `~/.zshrc`.
