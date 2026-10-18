@@ -443,6 +443,7 @@ hl.layer_rule({
 -- Glass: apps draw their own translucent backgrounds and Hyprland blurs behind them,
 -- so text stays fully opaque: kitty (background_opacity), GTK (translucent palette in
 -- gtk-3.0/gtk-4.0 gtk.css), Qt (Kvantum "Matugen" style, hypr/scripts/kvantum-theme.py).
+-- GTK4 apps must also ask for the blur (backdrop-filter in gtk-4.0/gtk.css), or Hyprland skips it.
 -- No whole-window opacity rule (that would fade text too); apps that can't do this
 -- (Electron: Discord, VS Code; Firefox) are simply solid.
 

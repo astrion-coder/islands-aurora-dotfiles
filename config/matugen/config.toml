@@ -44,7 +44,7 @@ output_path = '~/.config/gtk-3.0/gtk.css'
 
 [templates.gtk4]
 input_path  = '~/.config/matugen/templates/gtk.css'
-output_path = '~/.config/gtk-4.0/gtk.css'
+output_path = '~/.config/gtk-4.0/colors.css'   # imported by gtk-4.0/gtk.css
 
 [templates.kde]
 input_path  = '~/.config/matugen/templates/kde-colors.colors'

@@ -1,0 +1,12 @@
+/* GTK4 / libadwaita theme. The colours are generated from the wallpaper by matugen
+ * (template: ~/.config/matugen/templates/gtk.css). */
+@import url("colors.css");
+
+/* Frosted glass. GTK 4.24+ tells the compositor which parts of a window to blur
+ * (ext-background-effect protocol), and Hyprland then blurs only those parts: with no
+ * request, windows are see-through but not blurred. GTK only passes a blur on to the
+ * compositor when its radius is at least 20px; Hyprland applies its own blur settings
+ * (hyprland.lua, decoration.blur), so the radius here has no other effect. */
+window {
+    backdrop-filter: blur(20px);
+}
