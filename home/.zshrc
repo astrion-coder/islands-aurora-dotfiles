@@ -25,12 +25,16 @@ _fzf_compgen_path() { fd --hidden --follow --exclude .git . "$1"; }
 _fzf_compgen_dir()  { fd --type d --hidden --follow --exclude .git . "$1"; }
 source <(fzf --zsh)
 
-# `pacman -Ss <query>`: browse the repos in fzf with package details on the right; Tab marks
-# several, Enter installs the selection. Every other pacman command works as usual.
+# `pacman -Ss <query>`: browse the repos in fzf with package details on the right; installed
+# packages are marked in green. The query matches package names only. Tab marks several,
+# Enter installs the selection. Every other pacman command works as usual.
 pacman() {
     if [[ "$1" == "-Ss" ]]; then
         shift
-        command pacman -Slq | fzf --multi --query="$*" --preview 'pacman -Si {}' | xargs -ro sudo pacman -S
+        command pacman -Sl \
+            | awk '{ printf "%s \033[2m%s\033[0m%s\n", $2, $1, ($4 ~ /^\[installed/ ? "  \033[32minstalled\033[0m" : "") }' \
+            | fzf --ansi --multi --nth=1 --query="$*" --preview 'pacman -Si {1}' \
+            | awk '{ print $1 }' | xargs -ro sudo pacman -S
     else
         command pacman "$@"
     fi
