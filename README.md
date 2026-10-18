@@ -11,7 +11,8 @@ notifications, login and lock screens.
   horizontally, instead of being split into ever-smaller tiles. `Super+Shift+H/J/K/L`
   swaps a window with its neighbour and both keep their sizes.
 - **Floating "island" bar.** Waybar pills for workspaces, window title, clock, stats,
-  tray, sound and power, with line icons redrawn in the current palette.
+  tray, sound and power, with line icons redrawn in the current palette. Right-click
+  the sound pill to mute, switch Bluetooth on or off, or connect a Bluetooth device.
 - **Raycast-style launcher.** One rofi menu for apps and commands: clipboard history,
   emoji, file search, window switcher, system actions. Type maths, unit and currency
   conversions, time zones or AoE deadlines and press Enter for an answer card.

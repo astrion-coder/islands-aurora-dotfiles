@@ -55,7 +55,7 @@ hl.on("hyprland.start", function ()
   hl.exec_cmd("~/.config/hypr/scripts/wallpaper-theme.sh")  -- re-theme on `awww img`
   hl.exec_cmd("~/.config/waybar/scripts/opensnitch-ui.sh")  -- opensnitch-ui with themed tray icon
   hl.exec_cmd("nm-applet --indicator")  -- network menu in the tray
-  hl.exec_cmd("blueman-applet")  -- Bluetooth menu in the tray; also the agent that lets devices connect
+  hl.exec_cmd("blueman-applet")  -- lets Bluetooth devices connect (tray icon off; devices: sound pill right-click)
   hl.exec_cmd("wl-paste --watch cliphist store")  -- clipboard history for rofi (Super+Shift+V)
 end)
 
@@ -433,6 +433,14 @@ hl.layer_rule({
 })
 
 -- Blur behind the rofi launcher (translucent background in rofi/theme.rasi)
+hl.layer_rule({
+    name  = "blur-sound-menu",
+    match = { namespace = "^sound-menu$" },   -- sound pill's right-click menu
+
+    blur         = true,
+    ignore_alpha = 0.25,  -- blur the menu only, not the transparent layer around it
+})
+
 hl.layer_rule({
     name  = "blur-rofi",
     match = { namespace = "^rofi$" },

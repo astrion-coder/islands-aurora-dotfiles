@@ -85,5 +85,7 @@ playerctl
 
 # --- Misc tools the scripts use ---
 python
+python-gobject
+gtk-layer-shell
 xdg-utils
 grim

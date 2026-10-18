@@ -142,6 +142,11 @@ dbus-run-session -- sh -c '
     gsettings set org.gnome.desktop.interface gtk-theme adw-gtk3-dark
     gsettings set org.gnome.desktop.interface icon-theme breeze-dark' 2>/dev/null \
     || warn "couldn't set GNOME/GTK preferences (gsettings); GTK apps still read gtk-3.0/settings.ini"
+# Blueman: no tray icon of its own (Bluetooth is in the sound pill's right-click menu); the
+# applet keeps running as the agent that lets devices connect
+# (ShowConnected is off too: it would load the tray icon back in as its dependency)
+dbus-run-session -- gsettings set org.blueman.general plugin-list "['!StatusIcon', '!ShowConnected']" 2>/dev/null \
+    || warn "couldn't hide Blueman's tray icon; run: gsettings set org.blueman.general plugin-list \"['!StatusIcon', '!ShowConnected']\""
 # PDFs open in zathura (Okular stays available for annotating)
 xdg-mime default org.pwmt.zathura-pdf-mupdf.desktop application/pdf
 

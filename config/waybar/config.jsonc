@@ -121,11 +121,13 @@
     },
     // Sound pill: one module (scripts/audio.sh) so icon, volume and tooltip act as one.
     // Speaker or Bluetooth icon by class; tooltip = device name (+ battery for Bluetooth).
+    // Right-click: scripts/sound-menu.py (mute, mixer, Bluetooth on/off and devices).
     "custom/audio": {
         "exec": "$HOME/.config/waybar/scripts/audio.sh",
         "return-type": "json",
         "on-click": "$HOME/.config/waybar/scripts/popup.sh org.pulseaudio.pavucontrol pavucontrol",
-        "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+        "on-click-right": "$HOME/.config/waybar/scripts/sound-menu.py",
+        "on-click-middle": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
         "on-scroll-up": "wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+",
         "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
     },
