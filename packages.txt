@@ -70,13 +70,16 @@ glib2
 otf-droid-nerd
 noto-fonts
 
-# --- Audio / network / hardware keys ---
+# --- Audio / network / Bluetooth / hardware keys ---
 pipewire
 pipewire-pulse
 wireplumber
 pavucontrol
 networkmanager
 network-manager-applet
+bluez
+bluez-utils
+blueman
 brightnessctl
 playerctl
 

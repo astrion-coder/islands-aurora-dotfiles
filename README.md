@@ -65,7 +65,7 @@ Options:
    a palette, which fills in every themed file.
 5. **Applies app settings:** sets the dark GTK/KDE preferences, makes zathura the PDF viewer, and
    sets up Okular's highlighters.
-6. **Enables services:** NetworkManager, the polkit agent, a daily exchange-rate update for the
+6. **Enables services:** NetworkManager, Bluetooth, the polkit agent, a daily exchange-rate update for the
    calculator, and the SDDM login screen.
 
 ## Keybindings

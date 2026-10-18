@@ -153,6 +153,7 @@ systemctl --user enable qalc-rates.timer 2>/dev/null \
 systemctl --user enable hyprpolkitagent.service 2>/dev/null \
     || warn "couldn't enable hyprpolkitagent; run: systemctl --user enable hyprpolkitagent.service"
 sudo systemctl enable NetworkManager.service
+sudo systemctl enable bluetooth.service
 [ $WITH_OPENSNITCH = 1 ] && sudo systemctl enable opensnitchd.service
 if [ $DO_SDDM = 1 ]; then
     say "Installing the login screen (SDDM)"

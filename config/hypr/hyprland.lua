@@ -55,6 +55,7 @@ hl.on("hyprland.start", function ()
   hl.exec_cmd("~/.config/hypr/scripts/wallpaper-theme.sh")  -- re-theme on `awww img`
   hl.exec_cmd("~/.config/waybar/scripts/opensnitch-ui.sh")  -- opensnitch-ui with themed tray icon
   hl.exec_cmd("nm-applet --indicator")  -- network menu in the tray
+  hl.exec_cmd("blueman-applet")  -- Bluetooth menu in the tray; also the agent that lets devices connect
   hl.exec_cmd("wl-paste --watch cliphist store")  -- clipboard history for rofi (Super+Shift+V)
 end)
 
