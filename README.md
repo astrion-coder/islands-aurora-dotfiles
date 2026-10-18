@@ -19,7 +19,7 @@ notifications, login and lock screens.
 - **Themed login and lock.** An SDDM theme on the blurred wallpaper and a matching
   hyprlock screen.
 - **zsh with Oh My Zsh and fzf.** zsh becomes your login shell, with autosuggestions,
-  syntax highlighting and fzf for files, history and directories, coloured from the wallpaper.
+  syntax highlighting and fzf for files, history and directories.
 
 Everything installs from the official Arch repositories. No AUR. The one exception is
 Oh My Zsh, which isn't packaged and is cloned from GitHub.

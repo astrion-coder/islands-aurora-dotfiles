@@ -17,8 +17,6 @@ export EDITOR=nvim VISUAL=nvim
 
 # ---------------------------------------------------------------- fzf
 # Ctrl+T insert files, Ctrl+R search history, Alt+C cd into a directory, `**<Tab>` completion.
-# Colours follow the wallpaper: matugen writes them to ~/.config/fzf/colors.
-[[ -r "$HOME/.config/fzf/colors" ]] && export FZF_DEFAULT_OPTS_FILE="$HOME/.config/fzf/colors"
 export FZF_DEFAULT_OPTS='--height=40% --layout=reverse --border=rounded --info=inline-right'
 export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
 export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
