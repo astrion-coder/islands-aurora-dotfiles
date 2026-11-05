@@ -37,7 +37,7 @@ hl.monitor({
 -- Set programs that you use
 local terminal    = "kitty"
 local fileManager = "dolphin"
-local menu = "~/.config/rofi/scripts/launch.sh"  -- rofi, Raycast-style hub
+local menu = "qs ipc call launcher toggle"  -- the shell's Raycast-style launcher (quickshell/launcher)
 
 
 -------------------
@@ -50,13 +50,13 @@ local menu = "~/.config/rofi/scripts/launch.sh"  -- rofi, Raycast-style hub
 -- Or execute your favorite apps at launch like this:
 --
 hl.on("hyprland.start", function () 
-  hl.exec_cmd("~/.config/hypr/scripts/start-wallpaper.sh")  -- awww: blurred login image -> fade to wallpaper
-  hl.exec_cmd("waybar")
+  hl.exec_cmd("~/.config/hypr/scripts/start-wallpaper.sh")  -- awww: the blurred login image, fading into the wallpaper
+  hl.exec_cmd("qs -n")  -- the shell: bar, menus, notifications (~/.config/quickshell)
   hl.exec_cmd("~/.config/hypr/scripts/wallpaper-theme.sh")  -- re-theme on `awww img`
-  hl.exec_cmd("~/.config/waybar/scripts/opensnitch-ui.sh")  -- opensnitch-ui with themed tray icon
+  hl.exec_cmd("~/.config/quickshell/scripts/opensnitch-ui.sh")  -- opensnitch-ui with themed tray icon
   hl.exec_cmd("nm-applet --indicator")  -- network menu in the tray
   hl.exec_cmd("blueman-applet")  -- lets Bluetooth devices connect (tray icon off; devices: sound pill right-click)
-  hl.exec_cmd("wl-paste --watch cliphist store")  -- clipboard history for rofi (Super+Shift+V)
+  hl.exec_cmd("wl-paste --watch cliphist store")  -- clipboard history for the launcher (Super+Shift+V)
 end)
 
 
@@ -112,7 +112,7 @@ end
 hl.config({
     general = {
         gaps_in  = 5,
-        gaps_out = 12,  -- windows to the bar / screen edges
+        gaps_out = 12,  -- windows to the screen frame (quickshell/bar/Bar.qml)
 
         border_size = 0,  -- no focus border: focus is shown by dimming the others (decoration.dim_*)
 
@@ -157,7 +157,7 @@ hl.config({
             contrast   = 0.9,
             brightness = 0.8,   -- darken what's behind glass so text stays legible
             vibrancy   = 0.2,
-            popups     = true,  -- also frost waybar tooltips/menus
+            popups     = true,  -- also frost apps' right-click menus
         },
     },
 
@@ -244,6 +244,9 @@ hl.config({
         disable_hyprland_logo   = true,
         disable_splash_rendering = true,
         background_color        = 0x000000,
+        -- if the shell's lock screen ever crashes, a restarted shell (or hyprlock) can
+        -- take the lock over instead of leaving the screen stuck
+        allow_session_lock_restore = true,
     },
 })
 
@@ -298,22 +301,37 @@ hl.bind(mainMod .. " + M", hl.dsp.exec_cmd("command -v hyprshutdown >/dev/null 2
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + B", hl.dsp.exec_cmd("firefox"))
 
--- Lock screen (hyprlock). Super+L is taken by the vim-style focus binds.
-local lock = "pidof hyprlock || hyprlock"
+-- Lock screen: the shell's (quickshell/lock); hyprlock if the shell isn't running.
+-- Super+L is taken by the vim-style focus binds.
+local lock = "qs ipc call lock lock || pidof hyprlock || hyprlock"
 hl.bind("XF86ScreenSaver",        hl.dsp.exec_cmd(lock), { locked = true })
 hl.bind(mainMod .. " + Escape",   hl.dsp.exec_cmd(lock))
 
--- Waybar relaunch
-hl.bind(mainMod .. " + D", hl.dsp.exec_cmd("~/.config/waybar/scripts/launch.sh"))
+-- Restart the shell (bar, notifications, launcher, lock screen)
+hl.bind(mainMod .. " + D", hl.dsp.exec_cmd("~/.config/quickshell/scripts/restart.sh"))
 
 hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
-hl.bind(mainMod .. " + R", hl.dsp.exec_cmd(menu))
--- rofi hub: Super+Space like Raycast, plus direct shortcuts to its modes
-hl.bind(mainMod .. " + Space",     hl.dsp.exec_cmd(menu))
+hl.bind(mainMod .. " + R", hl.dsp.exec_cmd(menu .. " main"))
+-- launcher: Super+Space like Raycast, plus direct shortcuts to its menus
+hl.bind(mainMod .. " + Space",     hl.dsp.exec_cmd(menu .. " main"))
 hl.bind(mainMod .. " + SHIFT + V", hl.dsp.exec_cmd(menu .. " clipboard"))
 hl.bind(mainMod .. " + period",    hl.dsp.exec_cmd(menu .. " emoji"))
 hl.bind(mainMod .. " + F",         hl.dsp.exec_cmd(menu .. " files"))
 hl.bind(mainMod .. " + X",         hl.dsp.exec_cmd(menu .. " system"))
+-- Wallpapers (quickshell/launcher/WallpaperPanel.qml): a grid of ~/Pictures/Wallpapers;
+-- each new one comes in with a transition picked at random (quickshell/scripts/wallpaper.sh)
+hl.bind(mainMod .. " + W",         hl.dsp.exec_cmd(menu .. " wallpaper"))
+-- Screenshots and screen recordings (quickshell/launcher/ScreenshotPanel.qml): Super+Shift+P
+-- (or Print) opens the menu, growing out of the island like the launcher: a screenshot or
+-- a recording of an area, a window or the screen, with a delay, drawing on it after, the
+-- sound. It goes away as soon as one starts. While a recording runs, the same keys show
+-- it with its time (Enter stops it), and so does the red dot in the island (click it).
+-- Shift+Print takes an area straight away, Alt+Print a window, Ctrl+Print the screen.
+hl.bind(mainMod .. " + SHIFT + P", hl.dsp.exec_cmd(menu .. " screenshot"))
+hl.bind("Print",         hl.dsp.exec_cmd(menu .. " screenshot"))
+hl.bind("SHIFT + Print", hl.dsp.exec_cmd("qs ipc call screenshot area"))
+hl.bind("ALT + Print",   hl.dsp.exec_cmd("qs ipc call screenshot window"))
+hl.bind("CTRL + Print",  hl.dsp.exec_cmd("qs ipc call screenshot screen"))
 hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())
 
 -- Move focus with mainMod + arrow keys
@@ -413,41 +431,9 @@ hl.window_rule({
 -- })
 -- overlayLayerRule:set_enabled(false)
 
--- Blur behind waybar
-hl.layer_rule({
-    name  = "blur-waybar",
-    match = { namespace = "^waybar$" },
+-- The shell (bar, menus, notifications, launcher) needs no blur rule: it tells Hyprland
+-- exactly which shapes to blur (ext-background-effect; BackgroundEffect in quickshell/).
 
-    blur         = true,
-    ignore_alpha = 0.25,  -- blur only the islands (30%), not their fainter shadows
-    blur_popups  = true,  -- right-click / tray menus (power, nm-applet, ...) too
-})
-
--- Blur behind notifications (dunst; translucent background in its matugen template)
-hl.layer_rule({
-    name  = "blur-notifications",
-    match = { namespace = "^notifications$" },
-
-    blur         = true,
-    ignore_alpha = 0.25,
-})
-
--- Blur behind the rofi launcher (translucent background in rofi/theme.rasi)
-hl.layer_rule({
-    name  = "blur-sound-menu",
-    match = { namespace = "^sound-menu$" },   -- sound pill's right-click menu
-
-    blur         = true,
-    ignore_alpha = 0.25,  -- blur the menu only, not the transparent layer around it
-})
-
-hl.layer_rule({
-    name  = "blur-rofi",
-    match = { namespace = "^rofi$" },
-
-    blur         = true,
-    ignore_alpha = 0.1,
-})
 
 -- Glass: apps draw their own translucent backgrounds and Hyprland blurs behind them,
 -- so text stays fully opaque: kitty (background_opacity), GTK (translucent palette in
@@ -456,7 +442,25 @@ hl.layer_rule({
 -- No whole-window opacity rule (that would fade text too); apps that can't do this
 -- (Electron: Discord, VS Code; Firefox) are simply solid.
 
--- Bar dropdown (waybar/scripts/popup.sh): the volume mixer opens floating just
+-- The launcher (quickshell/launcher/LauncherWindow.qml) animates itself, growing out of
+-- the bar's dynamic island and back into it, so no layer fade on top of that
+hl.layer_rule({
+    name  = "launcher",
+    match = { namespace = "^launcher$" },
+
+    no_anim = true,
+})
+
+-- The screenshot picker (slurp, quickshell/scripts/screenshot.sh) has to be gone the moment
+-- you let go: a fade-out would still be on screen, purple box and all, when grim takes it
+hl.layer_rule({
+    name  = "screenshot-selection",
+    match = { namespace = "^selection$" },
+
+    no_anim = true,
+})
+
+-- Bar dropdown (quickshell/scripts/popup.sh): the volume mixer opens floating just
 -- under the bar's right end, like an applet
 hl.window_rule({
     name  = "bar-popups",

@@ -1,5 +1,5 @@
 [Unit]
-Description=Update qalc exchange rates (used by the rofi calculator card)
+Description=Update qalc exchange rates (used by the launcher's calculator and answer card)
 Wants=network-online.target
 After=network-online.target
 

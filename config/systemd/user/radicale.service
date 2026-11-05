@@ -1,0 +1,10 @@
+[Unit]
+Description=Radicale: the calendar server your Mac and phone sync with (calendar-sync-setup.sh)
+ConditionPathExists=%h/.config/radicale/users
+
+[Service]
+ExecStart=/usr/bin/radicale --config %h/.config/radicale/config
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

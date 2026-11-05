@@ -39,7 +39,7 @@ command -v sudo >/dev/null || die "sudo is required (pacman -S sudo, and add you
 # ---------------------------------------------------------------- 1. packages
 if [ $DO_PACKAGES = 1 ]; then
     say "Installing packages (official repositories)"
-    mapfile -t pkgs < <(sed -e 's/#.*//' -e '/^\s*$/d' "$REPO/packages.txt")
+    mapfile -t pkgs < <(sed -e 's/#.*//' -e 's/[[:space:]]*$//' -e '/^$/d' "$REPO/packages.txt")
     [ $WITH_OPENSNITCH = 1 ] && pkgs+=(opensnitch)
     sudo pacman -Syu --needed "${pkgs[@]}"
 fi
@@ -67,9 +67,13 @@ mkdir -p "$HOME/.local/share/applications"
 grep -rl "__HOME__" "$HOME/.config/qt5ct" "$HOME/.config/qt6ct" "$HOME/.local/share/applications" 2>/dev/null \
     | xargs -r sed -i "s|__HOME__|$HOME|g"
 
-find "$HOME/.config/hypr/scripts" "$HOME/.config/waybar/scripts" "$HOME/.config/rofi/scripts" \
+find "$HOME/.config/hypr/scripts" "$HOME/.config/quickshell/scripts" \
      "$HOME/.config/matugen/scripts" "$HOME/.config/sddm-theme" -type f \( -name '*.sh' -o -name '*.py' \) \
      -exec chmod +x {} +
+
+# a first calendar ("Personal"), so khal works from the start; existing ones are left
+# alone (calendar-sync-setup.sh syncs them with your Mac and phone)
+"$HOME/.config/quickshell/scripts/calendar-events.py" calendars >/dev/null || warn "couldn't create the first calendar"
 
 # login-screen assets live in ~/.cache/login (sync.sh); the theme source links to them
 mkdir -p "$HOME/.cache/login"
@@ -117,15 +121,15 @@ else
 fi
 printf '%s' "$wallpaper" > "$HOME/.cache/wallpaper-theme.last"
 
-# matugen writes every themed file (bar, borders, kitty, GTK, Qt, KDE, rofi, zathura, ...).
+# matugen writes every themed file (shell, borders, kitty, GTK, Qt, KDE, zathura, ...).
 # Its reload hooks need a running desktop, so they may complain here; that's fine.
 matugen image "$wallpaper" --mode dark --source-color-index 0 --continue-on-error >/dev/null 2>&1 || true
-# bar icons, Qt style, login/lock screen assets (normally run on each wallpaper change)
-eval "$(sed -n 's/^@define-color \([a-z0-9]*\) *\(#[0-9a-fA-F]\{6\}\);/\1=\2/p' "$HOME/.config/waybar/colors.css")"
-"$HOME/.config/waybar/scripts/gen-icons.sh" "$accent" "$accent2" "$muted" "$subtle" "$error"
+[ -f "$HOME/.config/quickshell/colors.css" ] || die "theme generation failed (is matugen installed?)"
+# tray icons, Qt style, login/lock screen assets (normally run on each wallpaper change)
+eval "$(sed -n 's/^@define-color \([a-z0-9]*\) *\(#[0-9a-fA-F]\{6\}\);/\1=\2/p' "$HOME/.config/quickshell/colors.css")"
+"$HOME/.config/quickshell/scripts/tray-icons.sh" "$accent" "$accent2" "$muted" "$error"
 "$HOME/.config/hypr/scripts/kvantum-theme.py"
 "$HOME/.config/sddm-theme/sync.sh" "$wallpaper"
-[ -f "$HOME/.config/waybar/colors.css" ] || die "theme generation failed (is matugen installed?)"
 
 # ---------------------------------------------------------------- 5. app settings
 say "Applying app settings"

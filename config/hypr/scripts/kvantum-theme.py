@@ -15,7 +15,7 @@ from pathlib import Path
 
 BASE = Path("/usr/share/Kvantum/KvArcDark")
 OUT = Path.home() / ".config/Kvantum/Matugen"
-COLORS_CSS = Path.home() / ".config/waybar/colors.css"
+COLORS_CSS = Path.home() / ".config/quickshell/colors.css"
 
 # How see-through window backgrounds / menus are (% opacity removed); ~kitty's 0.65
 WINDOW_TRANSPARENCY = 35

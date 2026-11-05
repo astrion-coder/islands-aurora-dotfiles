@@ -4,7 +4,7 @@
 
 # --- Desktop: compositor, session, portals ---
 hyprland
-hyprlock
+hyprlock          # fallback lock screen (the shell has its own)
 hyprpolkitagent
 xdg-desktop-portal-hyprland
 xdg-desktop-portal-gtk
@@ -17,6 +17,7 @@ sddm
 xorg-server
 qt6-declarative
 qt6-svg
+qt6-imageformats  # WebP and other pictures (clipboard and link previews)
 qt6-5compat
 
 # --- Wallpaper + wallpaper-derived colours ---
@@ -25,18 +26,26 @@ matugen
 ffmpeg
 librsvg
 
-# --- Bar, launcher, notifications ---
-waybar
-rofi
-rofi-calc
-rofi-emoji
+# --- Shell: bar, menus, notifications, launcher, lock screen ---
+quickshell
+cava              # the island's audio visualizer
 cliphist
 wl-clipboard
 wtype
 fd
 libqalculate
-dunst
+khal              # the island's calendar reads your calendars through it
+slurp             # screenshots: picking an area or a window (grim takes them)
+satty             # screenshots: drawing on them
+wf-recorder       # screen recordings (ffmpeg comes with it: the encoder check and thumbnails)
 libnotify
+
+# --- Calendar sync with your Mac / phone (set up with
+#     ~/.config/quickshell/scripts/calendar-sync-setup.sh; nothing runs until you do) ---
+vdirsyncer
+radicale
+python-bcrypt
+tailscale
 
 # --- Apps ---
 kitty
@@ -69,6 +78,7 @@ glib2
 # --- Fonts ---
 otf-droid-nerd
 noto-fonts
+noto-fonts-emoji
 
 # --- Audio / network / Bluetooth / hardware keys ---
 pipewire
@@ -85,7 +95,5 @@ playerctl
 
 # --- Misc tools the scripts use ---
 python
-python-gobject
-gtk-layer-shell
 xdg-utils
 grim

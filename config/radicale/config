@@ -1,0 +1,18 @@
+# Radicale: the calendar server your Mac and phone sync with. It only listens on this
+# machine; Tailscale makes it reachable (over HTTPS) from your other devices, and only
+# from them. Set up by ~/.config/quickshell/scripts/calendar-sync-setup.sh, which also
+# creates the users file (your username and password, hashed).
+
+[server]
+hosts = 127.0.0.1:5232
+
+[auth]
+type = htpasswd
+htpasswd_filename = ~/.config/radicale/users
+htpasswd_encryption = bcrypt
+
+[rights]
+type = owner_only
+
+[storage]
+filesystem_folder = ~/.local/share/radicale/collections

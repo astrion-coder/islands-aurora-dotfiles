@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name=OpenSnitch
-Exec=__HOME__/.config/waybar/scripts/opensnitch-ui.sh
+Exec=__HOME__/.config/quickshell/scripts/opensnitch-ui.sh
 Icon=opensnitch-ui
 GenericName=OpenSnitch Firewall
 GenericName[hu]=OpenSnitch-tűzfal

@@ -125,7 +125,7 @@ Rectangle {
         Component.onCompleted: opacity = 1
         Behavior on opacity { NumberAnimation { duration: 400; easing.type: Easing.OutCubic } }
 
-        // top-left: distro · session
+        // top-left: the session, e.g. "hyprland on arch"
         Island {
             anchors { top: parent.top; left: parent.left; topMargin: 14; leftMargin: 16 }
             tintColor: root.accent
@@ -134,9 +134,9 @@ Rectangle {
                 id: topRow
                 anchors.centerIn: parent
                 spacing: 7
-                Label { text: "arch"; color: root.accent }
-                Label { text: "·"; color: root.muted }
                 Label { text: root.sessionName.toLowerCase() }
+                Label { text: "on"; color: root.muted }
+                Label { text: "arch"; color: root.accent }
             }
         }
 
@@ -203,105 +203,122 @@ Rectangle {
                     text: root.userName
                 }
 
-                Island {
+                // The password never shows, not even as dots: a thin line fills out from the
+                // middle as you type (full at 12 characters), and every key sends a bright
+                // glint from the middle out to both ends; deleting sends it from the ends in.
+                // Enter logs in.
+                Item {
                     id: field
+
+                    readonly property int length: password.text.length
+                    readonly property real progress: Math.min(1, length / 12)
+                    property bool wrong: false       // red, then empties, after a wrong password
+                    property bool checking: false    // pulses while SDDM checks the password
+                    property real breath: 0
+
                     anchors.horizontalCenter: parent.horizontalCenter
-                    width: 320
-                    height: 48
-                    color: root.tint(root.fg, password.activeFocus ? 0.13 : 0.08)
-                    Behavior on color { ColorAnimation { duration: 250 } }
+                    width: 400
+                    height: 24                       // (room to click into it)
                     transform: Translate { id: shakeX }
 
-                    Image {
-                        id: lockIcon
-                        anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
-                        source: "dynamic/lock.svg"
-                        sourceSize: Qt.size(15, 15)
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: parent.width
+                        height: 4
+                        radius: 2
+                        color: root.tint(root.fg, password.activeFocus ? 0.2 : 0.12)
+                        Behavior on color { ColorAnimation { duration: 250 } }
                     }
 
-                    // The real input is invisible; animated dots (below) stand in for the
-                    // characters, like hyprlock: each pops in, deleted ones shrink away.
+                    Rectangle {
+                        id: fill
+                        anchors.centerIn: parent
+                        width: parent.width * field.progress
+                        height: 4
+                        radius: 2
+                        clip: true
+                        Behavior on width { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
+                        gradient: Gradient {
+                            orientation: Gradient.Horizontal
+                            GradientStop { position: 0; color: field.wrong ? root.error : root.accent }
+                            GradientStop { position: 1; color: field.wrong ? root.error : root.accent2 }
+                        }
+
+                        // glints running out from the middle (a few at once when typing fast)
+                        Repeater {
+                            id: ripples
+                            property int next: 0
+                            model: 6
+
+                            Item {
+                                id: ripple
+                                property real travel: 0
+                                property bool inward: false
+                                function start(towardsMiddle) { inward = towardsMiddle; run.restart() }
+                                anchors.fill: parent
+                                opacity: 0
+
+                                Repeater {
+                                    model: [-1, 1]
+                                    Rectangle {
+                                        required property int modelData
+                                        width: 28
+                                        height: parent.height
+                                        x: fill.width / 2 - width / 2 + modelData * ripple.travel * fill.width / 2
+                                        gradient: Gradient {
+                                            orientation: Gradient.Horizontal
+                                            GradientStop { position: 0; color: Qt.rgba(1, 1, 1, 0) }
+                                            GradientStop { position: 0.5; color: Qt.rgba(1, 1, 1, 0.95) }
+                                            GradientStop { position: 1; color: Qt.rgba(1, 1, 1, 0) }
+                                        }
+                                    }
+                                }
+
+                                ParallelAnimation {
+                                    id: run
+                                    NumberAnimation { target: ripple; property: "travel"; from: ripple.inward ? 1 : 0; to: ripple.inward ? 0 : 1; duration: 380; easing.type: Easing.OutQuad }
+                                    SequentialAnimation {
+                                        NumberAnimation { target: ripple; property: "opacity"; from: 0; to: 1; duration: 60 }
+                                        NumberAnimation { target: ripple; property: "opacity"; to: 0; duration: 320; easing.type: Easing.InQuad }
+                                    }
+                                }
+                            }
+                        }
+
+                        // checking the password
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: parent.radius
+                            color: root.fg
+                            opacity: field.checking ? field.breath : 0
+                        }
+                    }
+
+                    SequentialAnimation on breath {
+                        running: field.checking
+                        loops: Animation.Infinite
+                        NumberAnimation { to: 0.5; duration: 450; easing.type: Easing.InOutSine }
+                        NumberAnimation { to: 0; duration: 450; easing.type: Easing.InOutSine }
+                    }
+
+                    // the real input: invisible, it just takes the keys
                     TextInput {
                         id: password
-                        anchors { left: lockIcon.right; right: go.left; leftMargin: 10; rightMargin: 10
-                                  verticalCenter: parent.verticalCenter }
+                        anchors.fill: parent
                         color: "transparent"
                         selectionColor: "transparent"
                         selectedTextColor: "transparent"
                         cursorDelegate: Item {}
-                        font.family: root.fontFamily
-                        font.pixelSize: 14
                         echoMode: TextInput.Password
-                        clip: true
                         focus: true
+                        enabled: !field.checking
+                        property int last: 0
+                        onTextChanged: {
+                            if (text.length !== last) ripples.itemAt(ripples.next++ % ripples.count).start(text.length < last)
+                            last = text.length
+                        }
                         onAccepted: root.doLogin()
                         Keys.onEscapePressed: text = ""
-                        onTextChanged: {
-                            while (dotModel.count < text.length) dotModel.append({})
-                            while (dotModel.count > text.length) dotModel.remove(dotModel.count - 1)
-                        }
-
-                        ListModel { id: dotModel }
-                        ListView {
-                            id: dots
-                            anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter }
-                            height: 14
-                            orientation: ListView.Horizontal
-                            interactive: false
-                            spacing: 7
-                            clip: true
-                            model: dotModel
-                            // Once the field is full, glide the row left as each dot pops in
-                            // (and back on delete) so the newest dot stays in view.
-                            onContentWidthChanged: contentX = Math.max(0, contentWidth - width)
-                            Behavior on contentX { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
-                            delegate: Rectangle {
-                                width: 10; height: 10; radius: 5
-                                y: 2
-                                color: root.fg
-                            }
-                            add: Transition {
-                                NumberAnimation { property: "scale";   from: 0; to: 1; duration: 200; easing.type: Easing.OutBack }
-                                NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 150 }
-                            }
-                            remove: Transition {
-                                NumberAnimation { property: "scale";   to: 0; duration: 150; easing.type: Easing.InQuad }
-                                NumberAnimation { property: "opacity"; to: 0; duration: 150 }
-                            }
-                            displaced: Transition {
-                                NumberAnimation { property: "x"; duration: 150; easing.type: Easing.OutCubic }
-                            }
-                        }
-
-                        Text {
-                            anchors.verticalCenter: parent.verticalCenter
-                            visible: !parent.text
-                            color: root.muted
-                            font.family: root.fontFamily
-                            font.pixelSize: 14
-                            text: "password"
-                        }
-                    }
-
-                    Rectangle {
-                        id: go
-                        anchors { right: parent.right; rightMargin: 6; verticalCenter: parent.verticalCenter }
-                        width: 36; height: 36; radius: 18
-                        gradient: Gradient {
-                            orientation: Gradient.Horizontal
-                            GradientStop { position: 0; color: root.accent }
-                            GradientStop { position: 1; color: root.accent2 }
-                        }
-                        scale: goMouse.pressed ? 0.94 : (goMouse.containsMouse ? 1.06 : 1)
-                        Behavior on scale { NumberAnimation { duration: 150 } }
-                        Image { anchors.centerIn: parent; source: "dynamic/arrow.svg"; sourceSize: Qt.size(15, 15) }
-                        MouseArea {
-                            id: goMouse
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: root.doLogin()
-                        }
                     }
 
                     SequentialAnimation {
@@ -313,6 +330,17 @@ Rectangle {
                         NumberAnimation { target: shakeX; property: "x"; to: 8;  duration: 80 }
                         NumberAnimation { target: shakeX; property: "x"; to: 0;  duration: 50 }
                     }
+
+                    // after a wrong password the red line empties
+                    Timer {
+                        id: drain
+                        interval: 450
+                        onTriggered: {
+                            password.text = ""
+                            field.wrong = false
+                            password.forceActiveFocus()
+                        }
+                    }
                 }
 
                 Text {
@@ -323,7 +351,10 @@ Rectangle {
                     font.pixelSize: 12
                     property string error: ""
                     color: keyboard.capsLock || error ? root.accent2 : root.muted
-                    text: keyboard.capsLock ? "caps lock is on" : error
+                    text: keyboard.capsLock ? "caps lock is on"
+                        : field.checking ? "checking…"
+                        : error !== "" ? error
+                        : field.length === 0 ? "type your password" : ""
                 }
             }
         }
@@ -374,18 +405,20 @@ Rectangle {
 
     // ---------- login ----------
     function doLogin() {
-        if (!password.text) { password.forceActiveFocus(); return }
+        if (!password.text || field.checking) { password.forceActiveFocus(); return }
         message.error = ""
+        field.checking = true
         sddm.login(root.userName, password.text, root.sessionIndex)
     }
 
     Connections {
         target: sddm
         function onLoginFailed() {
+            field.checking = false
             message.error = "wrong password"
-            password.text = ""
+            field.wrong = true      // shakes red, then empties
             shake.restart()
-            password.forceActiveFocus()
+            drain.restart()
         }
         function onLoginSucceeded() {
             ui.opacity = 0      // leave only the blurred wallpaper Hyprland starts on

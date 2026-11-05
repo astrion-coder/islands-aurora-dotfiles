@@ -1,6 +1,6 @@
 #!/bin/bash
-# SDDM login screen with the Islands Aurora theme (password login; hyprlock is only
-# the lock screen). Run once with sudo:
+# SDDM login screen with the Islands Aurora theme (password login; the lock screen is
+# the shell's, quickshell/lock). Run once with sudo:
 #   sudo ~/.config/sddm-theme/install.sh
 # Takes effect at next boot.
 set -e

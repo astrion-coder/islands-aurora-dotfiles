@@ -1,17 +1,17 @@
 #!/bin/bash
-# Login (SDDM) + lock (hyprlock) screen assets from the current wallpaper and palette.
+# Login (SDDM) + lock screen assets from the current wallpaper and palette.
 # Called by hypr/scripts/wallpaper-theme.sh after each re-theme; safe to run by hand.
 #   ~/.cache/login/            blurred background, colours, icons (also used at Hyprland start)
 #   /usr/share/sddm/themes/islands-aurora/dynamic/   copy for SDDM (made writable by install.sh)
-#   ~/.config/hypr/hyprlock.conf
+#   ~/.config/hypr/hyprlock.conf  (fallback lock screen, used only if the shell isn't running)
 
 img=${1:-$(cat "${XDG_CACHE_HOME:-$HOME/.cache}/wallpaper-theme.last" 2>/dev/null)}
 out=${XDG_CACHE_HOME:-$HOME/.cache}/login
 theme_dyn=/usr/share/sddm/themes/islands-aurora/dynamic
 mkdir -p "$out"
 
-# Palette from waybar's generated colors.css (fg subtle muted accent accent2 ink base error)
-eval "$(sed -n 's/^@define-color \([a-z0-9]*\) *\(#[0-9a-fA-F]\{6\}\);/\1=\2/p' "$HOME/.config/waybar/colors.css")"
+# Palette from the shell's generated colors.css (fg subtle muted accent accent2 ink base error)
+eval "$(sed -n 's/^@define-color \([a-z0-9]*\) *\(#[0-9a-fA-F]\{6\}\);/\1=\2/p' "$HOME/.config/quickshell/colors.css")"
 
 # Blurred + darkened wallpaper: the login screen's background and Hyprland's first frame
 if [ -f "$img" ]; then
@@ -29,18 +29,17 @@ accent2=$accent2
 ink=$ink
 base=$base
 error=$error
+font=Noto Sans
 CONF
 
 svg() { printf '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="%s" stroke-width="%s" stroke-linecap="round" stroke-linejoin="round">%s</svg>\n' "$2" "$3" "$4" > "$out/$1.svg"; }
-svg lock    "$muted"   2.2 '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>'
-svg arrow   "$ink"     2.6 '<path d="M5 12h14M13 6l6 6-6 6"/>'
 svg suspend "$subtle"  2.2 '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>'
 svg reboot  "$subtle"  2.2 '<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/>'
 svg power   "$accent2" 2.4 '<path d="M12 3v8"/><path d="M6.3 7.3a8 8 0 1 0 11.4 0"/>'
 
 [ -w "$theme_dyn" ] && cp "$out"/background.jpg "$out"/theme.conf.user "$out"/*.svg "$theme_dyn/"
 
-# hyprlock: same look as the login screen
+# hyprlock (fallback for when the shell isn't running): same look as the login screen
 h() { echo "${1#\#}"; }
 user=$(id -un)
 cat > "$HOME/.config/hypr/hyprlock.conf" <<CONF
@@ -56,7 +55,7 @@ background {
 label {  # time
     text = cmd[update:1000] date +%H:%M
     color = rgb($(h $fg))
-    font_family = DroidSansM Nerd Font
+    font_family = Noto Sans
     font_size = 96
     position = 0, 190
     halign = center
@@ -66,7 +65,7 @@ label {  # time
 label {  # date
     text = cmd[update:60000] date '+%A, %-d %B' | tr '[:upper:]' '[:lower:]'
     color = rgb($(h $subtle))
-    font_family = DroidSansM Nerd Font
+    font_family = Noto Sans
     font_size = 14
     position = 0, 110
     halign = center
@@ -86,7 +85,7 @@ shape {  # avatar
 label {  # avatar letter
     text = ${user:0:1}
     color = rgb($(h $ink))
-    font_family = DroidSansM Nerd Font
+    font_family = Noto Sans
     font_size = 30
     position = 0, 20
     halign = center
@@ -96,7 +95,7 @@ label {  # avatar letter
 label {  # user name
     text = $user
     color = rgb($(h $fg))
-    font_family = DroidSansM Nerd Font
+    font_family = Noto Sans
     font_size = 15
     position = 0, -45
     halign = center
@@ -109,7 +108,7 @@ input-field {
     outline_thickness = 0
     inner_color = rgba($(h $base)4d)
     font_color = rgb($(h $fg))
-    font_family = DroidSansM Nerd Font
+    font_family = Noto Sans
     check_color = rgb($(h $accent))
     fail_color = rgb($(h $error))
     fail_text = wrong password

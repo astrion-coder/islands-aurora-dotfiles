@@ -18,7 +18,7 @@ restart_tray_apps() {
     pid=$(pgrep -f "^/usr/bin/python /usr/bin/opensnitch-ui") || return 0
     kill $pid
     for _ in $(seq 20); do kill -0 $pid 2>/dev/null || break; sleep 0.1; done
-    setsid -f "$HOME/.config/waybar/scripts/opensnitch-ui.sh" >/dev/null 2>&1
+    setsid -f "$HOME/.config/quickshell/scripts/opensnitch-ui.sh" >/dev/null 2>&1
 }
 
 current() { awww query 2>/dev/null | sed -n 's/.*currently displaying: image: //p' | head -n1; }

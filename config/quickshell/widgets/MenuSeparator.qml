@@ -1,0 +1,16 @@
+import QtQuick
+import QtQuick.Layouts
+import qs.services
+
+Item {
+    Layout.fillWidth: true
+    implicitHeight: 9
+
+    Rectangle {
+        anchors.verticalCenter: parent.verticalCenter
+        x: 8
+        width: parent.width - 16
+        height: 1
+        color: Theme.edge
+    }
+}

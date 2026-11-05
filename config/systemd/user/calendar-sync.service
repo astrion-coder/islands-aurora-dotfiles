@@ -1,0 +1,13 @@
+[Unit]
+Description=Sync your calendars with the calendar server (vdirsyncer; calendar-sync-setup.sh)
+After=radicale.service
+ConditionPathExists=%h/.config/vdirsyncer/config
+
+[Service]
+Type=oneshot
+TimeoutStartSec=3min
+# (one at a time with the shell's own syncs: quickshell/scripts/calendar-events.py)
+ExecStart=/usr/bin/flock %h/.local/share/vdirsyncer/lock /usr/bin/vdirsyncer -v WARNING metasync
+ExecStart=/usr/bin/flock %h/.local/share/vdirsyncer/lock /usr/bin/vdirsyncer -v WARNING sync
+# then the island's calendar shows what came in (nothing happens if the shell isn't running)
+ExecStartPost=-/usr/bin/qs ipc call calendar refresh

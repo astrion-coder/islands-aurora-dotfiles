@@ -1,0 +1,22 @@
+# khal: reads your calendars for the island's calendar (quickshell/bar/Calendar.qml).
+# Each folder in ~/.local/share/calendars/ is one calendar, named by its `displayname`
+# file. They're kept in step with your Mac and phone by vdirsyncer, once you've run
+# ~/.config/quickshell/scripts/calendar-sync-setup.sh.
+# In a terminal: `khal calendar`, `khal list`, or `ikhal` to browse and edit.
+
+[calendars]
+
+[[calendars]]
+path = ~/.local/share/calendars/*
+type = discover
+
+[locale]
+# (the island reads dates and times in these forms)
+timeformat = %H:%M
+dateformat = %Y-%m-%d
+longdateformat = %Y-%m-%d
+datetimeformat = %Y-%m-%d %H:%M
+longdatetimeformat = %Y-%m-%d %H:%M
+
+[default]
+highlight_event_days = True
