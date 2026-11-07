@@ -11,21 +11,24 @@ import qs.widgets
 //   ‹ ›, the scroll wheel        another month (or year, or years)
 //   the title                    months of the year, then years, to jump far
 //   today                        back to today
-//   a day                        its events below, and a field to add one ("14:30
-//                                dentist"; the buttons beside it pick the calendar and
-//                                make it weekly, monthly or yearly). Double-click a day
-//                                to start typing at once.
+//   a day                        its events below, and a box to add one: "14:30 dentist"
+//                                on top (the buttons beside it pick the calendar and make
+//                                it weekly, monthly or yearly), notes under it (Tab goes
+//                                there; Shift+Enter: a new line). Double-click a day to
+//                                start typing at once.
 //   an event                     drag it onto another day to move it there, at the same
 //                                time (hold it over ‹ or › for another month; Esc lets go
 //                                of it); hold Ctrl as you drop it for a copy. A repeating
 //                                one asks: just that day's, or all of them (Enter: just
 //                                that day's)? Double-click it, or its pencil, to change
 //                                it: it comes into the field as you'd type it ("09:30–10:00
-//                                Standup"), with its calendar and how often it repeats
-//                                beside it; Enter saves, Esc leaves it. × deletes (click
-//                                it twice; a repeating one: that day's, or all of them).
-//                                One whose title doesn't fit, or with notes, a place or a
-//                                link, has a ⌄: click it to open it out, again to close it.
+//                                Standup"), its notes under it, its calendar and how often
+//                                it repeats beside it; Enter saves, Esc leaves it. ×
+//                                deletes it (a repeating one: that day's; "delete all"
+//                                then takes the rest).
+//                                Click one to open it out (its whole title, place, notes
+//                                and link), again to close it; click its notes, or "add
+//                                notes", to change them. A ⌄ marks one with more to see.
 //   undo                         after each change, for a few seconds (Ctrl+Z any time)
 // Changes show at once and go to your Mac and phone straight after (services/Events.qml).
 // Keys, once you've clicked in it: ←/→ a day, ↑/↓ a week, Page Up/Down a month, Home
@@ -34,7 +37,7 @@ FocusScope {
     id: root
 
     property date date: new Date()           // now (the island's clock)
-    readonly property bool editing: field.activeFocus
+    readonly property bool editing: field.activeFocus || notes.activeFocus
     signal dismiss                           // Esc with nothing left to go back from
 
     // (set by reset(), not bound to the clock: they'd jump back every minute)
@@ -65,6 +68,7 @@ FocusScope {
     readonly property string shownRepeat: changing ? (editRepeat === "-" ? changing.freq ?? "" : editRepeat) : repeat
 
     property string notice: ""               // what just happened ("moved to Fri 6 Nov"), with undo
+    property var offerAll: null              // one day's of a repeating event just deleted: the rest can go too
     property int undoable: 0                 // changes made here that undo can put back
     readonly property string calendarName: Events.calendars.some(c => c.name === calendar) ? calendar
                                          : Events.calendars[0]?.name ?? ""
@@ -104,6 +108,7 @@ FocusScope {
         expanded = "";
         repeat = "";
         field.text = "";
+        notes.text = "";
         field.focus = false;
         select(today());
         Events.show(gridStart, 42);
@@ -173,6 +178,7 @@ FocusScope {
 
     function tell(text) {
         notice = text;
+        offerAll = null;
         noticeTimer.restart();
     }
 
@@ -250,50 +256,79 @@ FocusScope {
         tell((scope === "copy" ? "copied to " : "moved to ") + Qt.formatDate(to, "ddd d MMM"));
     }
 
+    // (a repeating one: just that day's, unless it's "all")
     function deleteEvent(e, scope) {
-        Events.remove(e, selected, scope);
+        const one = scope === "one" && e.repeat;
+        Events.remove(e, selected, one ? "one" : "all");
         undoable++;
-        tell(scope === "one" ? "deleted that day's" : "deleted");
+        tell(one ? "deleted this day's “" + e.title + "”" : "deleted “" + e.title + "”");
+        if (one)
+            offerAll = e;
     }
 
-    function startEditing(e) {
+    // (toNotes: the cursor at the end of its notes, not its title)
+    function startEditing(e, toNotes) {
         asking = null;
         expanded = "";
         editCalendar = "-";
         editRepeat = "-";
         changing = e;
         field.text = Events.describe(e);
-        field.forceActiveFocus();
-        field.cursorPosition = field.text.length;
+        notes.text = e.description ?? "";
+        const into = toNotes ? notes : field;
+        into.forceActiveFocus();
+        into.cursorPosition = into.text.length;
     }
 
     function stopEditing() {
         changing = null;
         field.text = "";
+        notes.text = "";
     }
 
-    // Enter in the field: add the event, or save the one being changed
+    // out of the field and its notes, keys back to the calendar (focus alone wouldn't do:
+    // this is a FocusScope, which hands it straight back to whichever had it)
+    function unfocus() {
+        field.focus = false;
+        notes.focus = false;
+        forceActiveFocus();
+    }
+
+    // (clicking anywhere but the field and its notes leaves the event as it was)
+    function leftFields() {
+        if (changing && !field.activeFocus && !notes.activeFocus)
+            stopEditing();
+    }
+
+    // Enter in the field or its notes: add the event, or save the one being changed
     function submit() {
+        const text = notes.text.replace(/[\u2028\u2029]/g, "\n");
         if (changing) {
             const e = changing;
             const before = field.text;
             changing = null;
-            const result = Events.edit(e, before, editRepeat, editCalendar);
+            const result = Events.edit(e, before, editRepeat, editCalendar, text);
             if (result === "empty") {
                 changing = e;           // (a title is needed: stays as it is)
+                field.forceActiveFocus();
                 return;
             }
             if (result === "changed") {
                 undoable++;
-                tell("changed");
+                tell("changed “" + (Events.parse(before).title || e.title) + "”");
             }
             field.text = "";
-            root.forceActiveFocus();
-        } else if (Events.add(selected, field.text, repeat, calendarName)) {
+            notes.text = "";
+            root.unfocus();
+        } else if (Events.add(selected, field.text, repeat, calendarName, text)) {
+            tell("added “" + Events.parse(field.text).title + "”");
             field.text = "";
+            notes.text = "";
             repeat = "";
             undoable++;
-            tell("added");
+            field.forceActiveFocus();       // (ready for the next one)
+        } else {
+            field.forceActiveFocus();       // (notes but no title yet)
         }
     }
 
@@ -349,7 +384,10 @@ FocusScope {
     Timer {
         id: noticeTimer
         interval: 8000
-        onTriggered: root.notice = ""
+        onTriggered: {
+            root.notice = "";
+            root.offerAll = null;
+        }
     }
 
     Keys.onReleased: event => {
@@ -633,25 +671,19 @@ FocusScope {
                 font.pixelSize: 16
                 font.weight: Font.Bold
             }
-            // (or, for a few seconds, what just happened; it doesn't widen the calendar)
             Label {
                 Layout.fillWidth: true
                 Layout.preferredWidth: 0
-                text: root.notice || root.relative(root.selected)
-                color: root.notice ? Theme.accent : Theme.muted
+                text: root.relative(root.selected)
+                color: Theme.muted
                 font.pixelSize: 13
                 elide: Text.ElideRight
             }
             Label {
-                visible: Events.syncing && root.notice === ""
+                visible: Events.syncing
                 text: "syncing"
                 color: Theme.muted
                 font.pixelSize: 12
-            }
-            Button {
-                visible: root.notice !== "" && root.undoable > 0
-                text: "undo"
-                onClicked: root.undo()
             }
         }
 
@@ -698,17 +730,18 @@ FocusScope {
                                                          || (modelData.url ?? "") !== ""
                         readonly property bool long: titleWidth.advanceWidth > title.width + 1      // (cut off on one line)
                         readonly property bool hasMore: hasNotes || long
-                        readonly property string key: (modelData.uid || modelData.title) + "@" + Events.key(root.selected)
-                        readonly property bool open: hasMore && root.expanded === key
                         // (one just added, or a copy, being written: not yet)
                         readonly property bool editable: modelData.uid !== "" && !modelData.pending
+                        // (open, one you can change shows its notes, or "add notes")
+                        readonly property bool showsNotes: hasNotes || editable
+                        readonly property string key: (modelData.uid || modelData.title) + "@" + Events.key(root.selected)
+                        readonly property bool open: (hasMore || editable) && root.expanded === key
                         readonly property bool moving: root.dragged !== null && root.dragged.uid === modelData.uid
                         readonly property bool changing: root.changing !== null && root.changing.uid === modelData.uid
-                        property bool sure: false           // × clicked once
 
                         width: agenda.width
                         opacity: moving ? 0.35 : modelData.pending ? 0.6 : 1
-                        height: head.height + (open && hasNotes ? notes.implicitHeight + 8 : 0)
+                        height: head.height + (open && showsNotes ? details.implicitHeight + 8 : 0)
                         clip: true
                         // (opening out: it grows to show the rest, and closes back)
                         Behavior on height { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
@@ -733,10 +766,9 @@ FocusScope {
                             width: parent.width
                             height: item.open ? Math.max(root.rowHeight, title.implicitHeight + 2 * title.anchors.topMargin) : root.rowHeight
                             hoverEnabled: true
-                            cursorShape: item.hasMore ? Qt.PointingHandCursor : item.editable ? Qt.OpenHandCursor : Qt.ArrowCursor
-                            onClicked: if (item.hasMore) root.expanded = item.open ? "" : item.key
+                            cursorShape: item.hasMore || item.editable ? Qt.PointingHandCursor : Qt.ArrowCursor
+                            onClicked: if (item.hasMore || item.editable) root.expanded = item.open ? "" : item.key
                             onDoubleClicked: if (item.editable) root.startEditing(item.modelData)
-                            onContainsMouseChanged: if (!containsMouse) item.sure = false
 
                             // pick it up and drop it on another day
                             DragHandler {
@@ -796,10 +828,11 @@ FocusScope {
                                 height: root.rowHeight
                                 spacing: 4
 
-                                // has notes: click for them
+                                // has notes: click for them (one without: there on hover, for adding some)
                                 Icon {
                                     anchors.verticalCenter: parent.verticalCenter
-                                    visible: item.hasMore
+                                    visible: item.hasMore || item.editable
+                                    opacity: item.hasMore || item.open || head.containsMouse ? 1 : 0
                                     name: "chevron-down"
                                     color: item.open || head.containsMouse ? Theme.accent : Theme.muted
                                     implicitWidth: 12
@@ -818,44 +851,32 @@ FocusScope {
                                 // change it (or double-click it)
                                 Button {
                                     anchors.verticalCenter: parent.verticalCenter
-                                    visible: item.editable && head.containsMouse && !item.sure
+                                    visible: item.editable && head.containsMouse
                                     icon: "edit"
                                     onClicked: root.startEditing(item.modelData)
                                 }
-                                // (twice: it goes from your Mac and phone too; a repeating
-                                // one, that day's or all of it)
+                                // delete it (from your Mac and phone too; a repeating one,
+                                // that day's: "delete all" then takes the rest; undo puts
+                                // it back)
                                 Button {
                                     anchors.verticalCenter: parent.verticalCenter
-                                    icon: item.sure ? "" : "close"
-                                    text: item.sure ? (item.modelData.repeat ? "this one" : "delete") : ""
-                                    on: item.sure
-                                    opacity: head.containsMouse || item.sure ? 1 : 0
+                                    icon: "close"
+                                    opacity: head.containsMouse ? 1 : 0
                                     visible: item.editable
-                                    onClicked: {
-                                        if (item.sure)
-                                            Qt.callLater(root.deleteEvent, item.modelData, "one");
-                                        else
-                                            item.sure = true;
-                                    }
-                                }
-                                Button {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    visible: item.sure && item.modelData.repeat
-                                    text: "all"
-                                    on: true
-                                    onClicked: Qt.callLater(root.deleteEvent, item.modelData, "all")
+                                    onClicked: Qt.callLater(root.deleteEvent, item.modelData, "one")
                                 }
                             }
                         }
 
-                        // its place, notes and link (fading in as it opens)
+                        // its place, notes and link (fading in as it opens); click the notes
+                        // (or "add notes") to change them, in the box below
                         Column {
-                            id: notes
+                            id: details
                             x: 20
                             y: head.height
                             width: parent.width - 32
                             spacing: 5
-                            visible: item.hasNotes && (item.open || item.height > head.height)
+                            visible: item.showsNotes && (item.open || item.height > head.height)
                             opacity: item.open ? 1 : 0
                             Behavior on opacity { NumberAnimation { duration: 200 } }
 
@@ -870,11 +891,12 @@ FocusScope {
                             }
                             Label {
                                 id: description
+                                readonly property bool empty: (item.modelData.description ?? "") === ""
                                 width: parent.width
-                                visible: (item.modelData.description ?? "") !== ""
-                                text: root.linkify(item.modelData.description ?? "")
-                                textFormat: Text.StyledText
-                                color: Theme.subtle
+                                visible: !empty || item.editable
+                                text: empty ? "add notes" : root.linkify(item.modelData.description)
+                                textFormat: empty ? Text.PlainText : Text.StyledText
+                                color: empty ? Theme.muted : Theme.subtle
                                 linkColor: Theme.accent
                                 font.pixelSize: 13
                                 font.weight: Font.Normal
@@ -882,7 +904,15 @@ FocusScope {
                                 onLinkActivated: link => root.openLink(link)
 
                                 HoverHandler {
-                                    cursorShape: description.hoveredLink ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                    cursorShape: description.hoveredLink ? Qt.PointingHandCursor
+                                               : item.editable ? Qt.IBeamCursor : Qt.ArrowCursor
+                                }
+                                TapHandler {
+                                    enabled: item.editable
+                                    onTapped: point => {
+                                        if (description.linkAt(point.position.x, point.position.y) === "")
+                                            root.startEditing(item.modelData, true);
+                                    }
                                 }
                             }
                             Label {
@@ -902,6 +932,51 @@ FocusScope {
                             }
                         }
                     }
+                }
+            }
+        }
+
+        // what just happened, for a few seconds: undo it (or, after deleting one day's of a
+        // repeating event, the rest of it too)
+        Rectangle {
+            Layout.fillWidth: true
+            visible: root.notice !== ""
+            implicitHeight: 34
+            radius: Theme.pillRadius
+            color: Theme.alpha(Theme.accent, 0.10)
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 10
+                anchors.rightMargin: 2
+                spacing: 2
+
+                Icon {
+                    name: "check"
+                    color: Theme.accent
+                    weight: 2.6
+                    implicitWidth: 12
+                    implicitHeight: 12
+                }
+                Label {
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: 0
+                    Layout.leftMargin: 6
+                    text: root.notice
+                    textFormat: Text.PlainText
+                    color: Theme.accent
+                    font.pixelSize: 13
+                    elide: Text.ElideRight
+                }
+                Button {
+                    visible: root.offerAll !== null
+                    text: "delete all"
+                    onClicked: root.deleteEvent(root.offerAll, "all")
+                }
+                Button {
+                    visible: root.undoable > 0
+                    text: "undo"
+                    onClicked: root.undo()
                 }
             }
         }
@@ -963,115 +1038,236 @@ FocusScope {
             elide: Text.ElideRight
         }
 
-        // adding one (or changing one)
+        // adding one (or changing one): its title and time on top; its notes (the event's
+        // description) under them, while you're writing or once something's in them.
+        // Enter saves the event; Shift+Enter in the notes is a new line.
         Rectangle {
+            id: box
+            readonly property bool active: field.activeFocus || notes.activeFocus
+            readonly property bool showNotes: root.changing !== null || active || notes.text !== ""
             Layout.fillWidth: true
             visible: !Events.missing && root.asking === null
-            implicitHeight: 40
+            implicitHeight: 40 + (showNotes ? notesPart.height : 0)
             radius: Theme.pillRadius
-            color: Theme.alpha(Theme.fg, field.activeFocus ? 0.10 : 0.06)
-            border.width: field.activeFocus || root.changing ? 1 : 0
+            color: Theme.alpha(Theme.fg, active ? 0.10 : 0.06)
+            border.width: active || root.changing ? 1 : 0
             border.color: Theme.alpha(Theme.accent, root.changing ? 0.8 : 0.5)
 
-            MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.IBeamCursor
-                onClicked: field.forceActiveFocus()
-            }
+            // ---------- the title
+            Item {
+                width: parent.width
+                height: 40
 
-            Icon {
-                id: plus
-                x: 10
-                anchors.verticalCenter: parent.verticalCenter
-                name: root.changing ? "edit" : "plus"
-                color: field.activeFocus ? Theme.accent : Theme.muted
-                implicitWidth: 13
-                implicitHeight: 13
-            }
-
-            TextInput {
-                id: field
-                anchors.left: plus.right
-                anchors.leftMargin: 8
-                anchors.right: calendarButton.visible ? calendarButton.left : repeatButton.left
-                anchors.rightMargin: 6
-                anchors.verticalCenter: parent.verticalCenter
-                color: Theme.fg
-                selectionColor: Theme.alpha(Theme.accent, 0.35)
-                selectedTextColor: Theme.fg
-                font.family: Theme.fontFamily
-                font.pixelSize: 14
-                clip: true
-
-                Label {
-                    anchors.verticalCenter: parent.verticalCenter
-                    visible: field.text === ""
-                    text: root.changing ? "a title, or 14:30 and a title" : field.activeFocus ? "14:30 dentist, or just a title" : "add an event"
-                    color: Theme.muted
-                    font.pixelSize: 14
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.IBeamCursor
+                    onClicked: field.forceActiveFocus()
                 }
 
-                Keys.onPressed: event => {
-                    if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                        root.submit();
-                        event.accepted = true;
-                    } else if (event.key === Qt.Key_Escape) {
-                        if (root.changing) {
-                            root.stopEditing();
-                            root.forceActiveFocus();
-                        } else if (text !== "") {
-                            text = "";
-                        } else {
-                            root.forceActiveFocus();
+                Icon {
+                    id: plus
+                    x: 10
+                    anchors.verticalCenter: parent.verticalCenter
+                    name: root.changing ? "edit" : "plus"
+                    color: field.activeFocus ? Theme.accent : Theme.muted
+                    implicitWidth: 13
+                    implicitHeight: 13
+                }
+
+                TextInput {
+                    id: field
+                    anchors.left: plus.right
+                    anchors.leftMargin: 8
+                    anchors.right: calendarButton.visible ? calendarButton.left : repeatButton.left
+                    anchors.rightMargin: 6
+                    anchors.verticalCenter: parent.verticalCenter
+                    color: Theme.fg
+                    selectionColor: Theme.alpha(Theme.accent, 0.35)
+                    selectedTextColor: Theme.fg
+                    font.family: Theme.fontFamily
+                    font.pixelSize: 14
+                    clip: true
+
+                    Label {
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: field.text === ""
+                        text: root.changing ? "a title, or 14:30 and a title" : field.activeFocus ? "14:30 dentist, or just a title" : "add an event"
+                        width: field.width
+                        elide: Text.ElideRight
+                        color: Theme.muted
+                        font.pixelSize: 14
+                    }
+
+                    Keys.onPressed: event => {
+                        if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                            root.submit();
+                            event.accepted = true;
+                        } else if (event.key === Qt.Key_Tab || event.key === Qt.Key_Down) {
+                            notes.forceActiveFocus();
+                            notes.cursorPosition = notes.text.length;
+                            event.accepted = true;
+                        } else if (event.key === Qt.Key_Escape) {
+                            if (root.changing) {
+                                root.stopEditing();
+                                root.unfocus();
+                            } else if (text !== "" || notes.text !== "") {
+                                text = "";
+                                notes.text = "";
+                            } else {
+                                root.unfocus();
+                            }
+                            event.accepted = true;
                         }
-                        event.accepted = true;
+                    }
+                    onActiveFocusChanged: Qt.callLater(root.leftFields)
+                }
+
+                // which calendar (when there's more than one), in its colour
+                Button {
+                    id: calendarButton
+                    anchors.right: repeatButton.left
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: Events.calendars.length > 1
+                    implicitWidth: Math.min(130, calendarLabel.implicitWidth + 30)
+                    onClicked: root.cycleCalendar()
+
+                    Rectangle {
+                        id: calendarDot
+                        x: 8
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 7
+                        height: 7
+                        radius: 3.5
+                        color: Events.colorOf(root.shownCalendar) || Theme.accent
+                    }
+                    Label {
+                        id: calendarLabel
+                        anchors.left: calendarDot.right
+                        anchors.leftMargin: 5
+                        anchors.right: parent.right
+                        anchors.rightMargin: 8
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: root.shownCalendar
+                        font.pixelSize: 13
+                        color: calendarButton.containsMouse ? Theme.accent : Theme.subtle
+                        elide: Text.ElideRight
                     }
                 }
-                // (clicking elsewhere leaves the event as it was)
-                onActiveFocusChanged: if (!activeFocus && root.changing) root.stopEditing()
+
+                // once / weekly / monthly / yearly
+                Button {
+                    id: repeatButton
+                    anchors.right: parent.right
+                    anchors.rightMargin: 4
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: root.shownRepeat || "once"
+                    on: root.shownRepeat !== ""
+                    onClicked: root.cycleRepeat()
+                }
             }
 
-            // which calendar (when there's more than one), in its colour
-            Button {
-                id: calendarButton
-                anchors.right: repeatButton.left
-                anchors.verticalCenter: parent.verticalCenter
-                visible: Events.calendars.length > 1
-                implicitWidth: Math.min(130, calendarLabel.implicitWidth + 30)
-                onClicked: root.cycleCalendar()
+            // ---------- its notes
+            Item {
+                id: notesPart
+                y: 40
+                width: parent.width
+                height: Math.min(notes.implicitHeight, 96) + 18
+                visible: box.showNotes
 
                 Rectangle {
-                    id: calendarDot
-                    x: 8
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: 7
-                    height: 7
-                    radius: 3.5
-                    color: Events.colorOf(root.shownCalendar) || Theme.accent
+                    x: 10
+                    width: parent.width - 20
+                    height: 1
+                    color: Theme.alpha(Theme.fg, 0.08)
                 }
-                Label {
-                    id: calendarLabel
-                    anchors.left: calendarDot.right
-                    anchors.leftMargin: 5
-                    anchors.right: parent.right
-                    anchors.rightMargin: 8
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: root.shownCalendar
-                    font.pixelSize: 13
-                    color: calendarButton.containsMouse ? Theme.accent : Theme.subtle
-                    elide: Text.ElideRight
-                }
-            }
 
-            // once / weekly / monthly / yearly
-            Button {
-                id: repeatButton
-                anchors.right: parent.right
-                anchors.rightMargin: 4
-                anchors.verticalCenter: parent.verticalCenter
-                text: root.shownRepeat || "once"
-                on: root.shownRepeat !== ""
-                onClicked: root.cycleRepeat()
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.IBeamCursor
+                    onClicked: notes.forceActiveFocus()
+                }
+
+                Icon {
+                    x: 10
+                    y: 11
+                    name: "notes"
+                    color: notes.activeFocus ? Theme.accent : Theme.muted
+                    implicitWidth: 13
+                    implicitHeight: 13
+                }
+
+                Flickable {
+                    id: notesView
+                    anchors.fill: parent
+                    anchors.leftMargin: 31
+                    anchors.rightMargin: 10
+                    anchors.topMargin: 9
+                    anchors.bottomMargin: 9
+                    contentWidth: width
+                    contentHeight: notes.implicitHeight
+                    interactive: false              // (the wheel scrolls; dragging selects)
+                    clip: true
+                    boundsBehavior: Flickable.StopAtBounds
+
+                    // (keeps the cursor in sight as you type past the bottom)
+                    function show(r) {
+                        if (contentY > r.y)
+                            contentY = r.y;
+                        else if (contentY + height < r.y + r.height)
+                            contentY = r.y + r.height - height;
+                    }
+
+                    WheelHandler {
+                        target: null
+                        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+                        onWheel: event => notesView.contentY = Math.max(0, Math.min(notesView.contentHeight - notesView.height,
+                                                                                        notesView.contentY - event.angleDelta.y / 2))
+                    }
+
+                    TextEdit {
+                        id: notes
+                        width: notesView.width
+                        wrapMode: TextEdit.Wrap
+                        textFormat: TextEdit.PlainText
+                        color: Theme.fg
+                        selectionColor: Theme.alpha(Theme.accent, 0.35)
+                        selectedTextColor: Theme.fg
+                        selectByMouse: true
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 13
+                        onCursorRectangleChanged: notesView.show(cursorRectangle)
+
+                        Label {
+                            width: parent.width
+                            visible: notes.text === ""
+                            text: notes.activeFocus ? "notes (Shift+Enter: a new line)" : "add notes"
+                            color: Theme.muted
+                            font.pixelSize: 13
+                            elide: Text.ElideRight
+                        }
+
+                        Keys.onPressed: event => {
+                            const enter = event.key === Qt.Key_Return || event.key === Qt.Key_Enter;
+                            if (enter && (event.modifiers & Qt.ShiftModifier)) {
+                                if (selectedText !== "")
+                                    remove(selectionStart, selectionEnd);
+                                insert(cursorPosition, "\n");
+                                event.accepted = true;
+                            } else if (enter) {
+                                root.submit();
+                                event.accepted = true;
+                            } else if (event.key === Qt.Key_Escape && root.changing) {
+                                root.stopEditing();             // (leaves it as it was)
+                                root.unfocus();
+                                event.accepted = true;
+                            } else if (event.key === Qt.Key_Escape || event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
+                                field.forceActiveFocus();       // (back to the title)
+                                event.accepted = true;
+                            }
+                        }
+                        onActiveFocusChanged: Qt.callLater(root.leftFields)
+                    }
+                }
             }
         }
     }
@@ -1159,7 +1355,7 @@ FocusScope {
             cursorShape: Qt.PointingHandCursor
             onClicked: {
                 root.select(day);
-                root.forceActiveFocus();
+                root.unfocus();
             }
             onDoubleClicked: {
                 root.select(day);

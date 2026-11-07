@@ -264,8 +264,10 @@ an app that supports media controls (MPRIS: Firefox, Spotify, mpv with mpv-mpris
   some), each in its calendar's colour. Type into *add an event* and press `Enter`:
   `14:30 dentist`, `9am standup`, `2:30pm-3pm call`, or just a title for an all-day
   event. The buttons beside it choose the calendar (when there's more than one) and make
-  the next event repeat weekly, monthly or yearly. Double-click a day to start typing
-  straight away. While you type, the island stays open until you press `Esc` or click
+  the next event repeat weekly, monthly or yearly. The same box opens up underneath for
+  the event's notes, its description (`Tab` goes there, `Shift+Enter` starts a new line,
+  `Enter` saves; links in it can be clicked once it's saved). Double-click a day to start
+  typing straight away. While you type, the island stays open until you press `Esc` or click
   elsewhere. Changes show straight away and go to your Mac and phone right after.
 - **Moving events:** drag an event onto another day in the month and it moves there, at
   the same time. Hold it over `‹` or `›` to go to another month on the way; `Esc` lets go
@@ -273,15 +275,18 @@ an app that supports media controls (MPRIS: Firefox, Spotify, mpv with mpv-mpris
   calendar asks whether to move just that day's or all of them (`Enter`: just that
   day's); moving all of them moves the series along, so a weekly Monday meeting dropped
   on a Tuesday repeats on Tuesdays.
+- **Opening events:** click an event to open it out: its whole title, its place, its notes
+  and its link. Click its notes (or *add notes*, when it has none) to change them in the
+  box below. Click the event again to close it. A `⌄` marks one with more to see.
 - **Changing events:** double-click an event (or click its pencil) and it comes into the
-  field the way you'd type it, `09:30–10:00 Standup`: change the time or the title, or
-  pick another calendar or repeat with the buttons beside it, and press `Enter`; `Esc`
-  leaves it as it was. Taking the time away makes it all day. A repeating event changes
-  as a whole.
-- **Deleting:** hover an event and click `×`, then *delete*; for a repeating one, *this
-  one* (only that day's) or *all*.
-- **Undo:** after each change the calendar says what it did, with an *undo* button for a
-  few seconds; `Ctrl+Z` undoes changes one by one. Undo puts the event's file back as it
+  box the way you'd type it, `09:30–10:00 Standup`, with its notes under it: change the
+  time, the title or the notes, or pick another calendar or repeat with the buttons
+  beside it, and press `Enter`; `Esc` leaves it as it was. Taking the time away makes it
+  all day. A repeating event changes as a whole, notes included.
+- **Deleting:** hover an event and click `×`: it's gone straight away. For a repeating
+  one that's only that day's; *delete all* in the message that follows takes the rest.
+- **Undo:** after each change the calendar says what it did, under the day's events,
+  with an *undo* button for a few seconds; `Ctrl+Z` undoes changes one by one. Undo puts the event's file back as it
   was, so a change made to the same event on your Mac meanwhile would be undone too.
 - **Reminders:** the island announces each event 10 minutes before it starts, and again
   when it starts.

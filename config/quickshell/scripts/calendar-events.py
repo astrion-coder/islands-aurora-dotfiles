@@ -10,20 +10,21 @@ stays as it was).
   calendar-events.py calendars       the calendars, as JSON: [{"name", "color"}]
   calendar-events.py list START END  the events of each day from START to END (dates,
                                      yyyy-mm-dd), as JSON: {"2026-11-02": [event, ...]}
-  calendar-events.py add CALENDAR DATE START END REPEAT TITLE
+  calendar-events.py add CALENDAR DATE START END REPEAT TITLE [NOTES]
                                      START and END "HH:MM", or "" (END: an hour after
                                      START; both: all day); REPEAT "", "weekly",
-                                     "monthly" or "yearly"
+                                     "monthly" or "yearly"; NOTES its description
   calendar-events.py move UID FROM TO SCOPE
                                      the event as it is on day FROM, onto day TO, at the
                                      same time; SCOPE "one" (of a repeating event, only
                                      that day's), "all" (the whole series moves along)
                                      or "copy" (a new event, not repeating)
-  calendar-events.py edit UID TITLE START END REPEAT CALENDAR
+  calendar-events.py edit UID TITLE START END REPEAT CALENDAR [NOTES]
                                      TITLE "" keeps it; START "-" keeps the times, ""
                                      makes it all day, "HH:MM" (END as for add) sets
-                                     them; REPEAT and CALENDAR "-" keep them. A repeating
-                                     event changes as a whole
+                                     them; REPEAT and CALENDAR "-" keep them; NOTES (if
+                                     given) replaces the description ("" removes it). A
+                                     repeating event changes as a whole
   calendar-events.py delete UID [DAY]
                                      all of it; with DAY, only that day's (of a
                                      repeating event)
@@ -637,7 +638,11 @@ def cmd_list(start, end):
 
 # ---------------------------------------------------------------- the commands
 
-def cmd_add(calendar, date, start, end, repeat, title):
+def notes_line(notes):
+    return "DESCRIPTION:" + escape(notes.replace("\r\n", "\n").strip())
+
+
+def cmd_add(calendar, date, start, end, repeat, title, notes=""):
     cal = calendar_called(calendar)
     day = dt.date.fromisoformat(date)
     uid = str(uuid.uuid4()).upper()
@@ -648,7 +653,10 @@ def cmd_add(calendar, date, start, end, repeat, title):
     lines += [begin.line("DTSTART"), finish.line("DTEND")]
     if repeat in ("weekly", "monthly", "yearly"):
         lines.append(f"RRULE:FREQ={repeat.upper()}")
-    lines += [fold("SUMMARY:" + escape(title)), "END:VEVENT", "END:VCALENDAR"]
+    lines.append("SUMMARY:" + escape(title))
+    if notes.strip():
+        lines.append(notes_line(notes))
+    lines = [fold(line) for line in lines] + ["END:VEVENT", "END:VCALENDAR"]
     save({cal["dir"] / f"{uid}.ics": ("\r\n".join(lines) + "\r\n").encode()})
     print(uid)
     return 0
@@ -722,7 +730,7 @@ def copy_event(e, day, days):
     return 0
 
 
-def cmd_edit(uid, title, begin, finish, repeat, calendar):
+def cmd_edit(uid, title, begin, finish, repeat, calendar, notes=None):
     if repeat not in ("-", "", "weekly", "monthly", "yearly"):
         raise Problem(f"edit: REPEAT is -, \"\", weekly, monthly or yearly, not {repeat}")
     e = load(uid)
@@ -738,6 +746,18 @@ def cmd_edit(uid, title, begin, finish, repeat, calendar):
         for ev in e.events:
             if ev is m or ev.text("SUMMARY") == old:
                 ev.set("SUMMARY", "SUMMARY:" + escape(title))
+                mark(ev)
+
+    # the description (on the days changed on their own too, unless theirs is different)
+    if notes is not None and notes.replace("\r\n", "\n").strip() != m.text("DESCRIPTION"):
+        old_notes = m.text("DESCRIPTION")
+        for ev in e.events:
+            if ev is m or ev.text("DESCRIPTION") == old_notes:
+                if notes.strip():
+                    ev.set("DESCRIPTION", notes_line(notes))
+                else:
+                    ev.remove("DESCRIPTION")
+                ev.remove("X-ALT-DESC")         # (a formatted copy some apps keep: now out of date)
                 mark(ev)
 
     start = m.time("DTSTART")
@@ -852,8 +872,10 @@ def main(argv):
         ("calendars", 0): lambda: print(json.dumps([{"name": c["name"], "color": c["color"]} for c in calendars()])) or 0,
         ("list", 2): lambda: cmd_list(*args),
         ("add", 6): lambda: cmd_add(*args),
+        ("add", 7): lambda: cmd_add(*args),
         ("move", 4): lambda: cmd_move(*args),
         ("edit", 6): lambda: cmd_edit(*args),
+        ("edit", 7): lambda: cmd_edit(*args),
         ("delete", 1): lambda: cmd_delete(*args),
         ("delete", 2): lambda: cmd_delete(*args),
         ("undo", 0): cmd_undo,

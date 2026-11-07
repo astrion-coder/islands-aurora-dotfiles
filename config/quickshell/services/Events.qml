@@ -218,16 +218,17 @@ Singleton {
     }
 
     // "14:30 Dentist", "9am standup", "2:30pm-3pm call", "14:00 to 15:30 review" or just
-    // "Birthday" (all day), into `calendar` (a name from `calendars`). False if there's
-    // no title.
-    function add(d, text, repeat, calendar) {
+    // "Birthday" (all day), into `calendar` (a name from `calendars`), with `notes` (its
+    // description, if any). False if there's no title.
+    function add(d, text, repeat, calendar, notes) {
         const e = parse(text);
         if (e.title === "" || !calendar)
             return false;
-        const k = key(d);
+        const k = key(d), description = (notes ?? "").trim();
         insert(k, { uid: "", title: e.title, start: e.time, end: e.time ? e.end || plusHour(e.time) : "",
-                    allDay: e.time === "", repeat: !!repeat, freq: repeat ?? "", calendar: calendar, pending: true });
-        change(["add", calendar, k, e.time, e.end, repeat ?? "", e.title]);
+                    allDay: e.time === "", repeat: !!repeat, freq: repeat ?? "", calendar: calendar,
+                    description: description, pending: true });
+        change(["add", calendar, k, e.time, e.end, repeat ?? "", e.title, description]);
         return true;
     }
 
@@ -248,9 +249,10 @@ Singleton {
     }
 
     // `text` as typed ("09:30-10:00 Standup", "Birthday"), how often it repeats and its
-    // calendar ("-": as they are). A repeating event changes as a whole. Says "changed",
-    // "same" (nothing to change) or "empty" (no title).
-    function edit(e, text, repeat, calendar) {
+    // calendar ("-": as they are), and its notes (undefined: as they are). A repeating
+    // event changes as a whole. Says "changed", "same" (nothing to change) or "empty"
+    // (no title).
+    function edit(e, text, repeat, calendar, notes) {
         const p = parse(text);
         if (p.title === "")
             return "empty";
@@ -258,7 +260,8 @@ Singleton {
         const same = e.allDay ? p.time === "" : (!e.start && p.time === "") || (p.time === e.start && (p.end === "" || p.end === e.end));
         const start = same ? "-" : p.time, end = same ? "" : p.end;
         const title = p.title === e.title ? "" : p.title;
-        if (start === "-" && title === "" && repeat === "-" && calendar === "-")
+        const description = notes === undefined || notes.trim() === (e.description ?? "").trim() ? null : notes.trim();
+        if (start === "-" && title === "" && repeat === "-" && calendar === "-" && description === null)
             return "same";
         reshape((k, x) => {
             if (x.uid !== e.uid)
@@ -277,9 +280,11 @@ Singleton {
             }
             if (calendar !== "-")
                 y.calendar = calendar;
+            if (description !== null)
+                y.description = description;
             return [[k, y]];
         });
-        change(["edit", e.uid, title, start, end, repeat, calendar]);
+        change(["edit", e.uid, title, start, end, repeat, calendar].concat(description === null ? [] : [description]));
         return "changed";
     }
 
