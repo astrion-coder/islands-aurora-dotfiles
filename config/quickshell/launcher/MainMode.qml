@@ -6,8 +6,9 @@ import "fuzzy.js" as Fuzzy
 
 // The main menu: commands and apps together, like Raycast. Hidden keywords (meta) let
 // partial words match ("paste" finds Clipboard History). Apps you open often come first.
-// Enter on text that matches nothing works it out (maths, units, currency, time zones,
-// AoE deadlines) and shows the answer, copied.
+// Maths, units, currency, time zones and AoE deadlines are worked out as you type: the
+// answer shows above the list (LauncherWindow.qml), picked, so Enter pastes it where you
+// were and Alt+1 only copies it.
 Mode {
     id: root
 
@@ -53,12 +54,65 @@ Mode {
         }))
         .sort((a, b) => b.boost - a.boost || a.title.localeCompare(b.title))
 
-    rows: Fuzzy.filter(commands.concat(apps), query)
+    // (with an answer and nothing else matching the text, the usual list stays under it)
+    readonly property var found: Fuzzy.filter(commands.concat(apps), query)
+    rows: found.length === 0 && answer !== null ? Fuzzy.filter(commands.concat(apps), "") : found
 
-    property bool working: false
-    property bool nothing: false     // the last Enter on unmatched text had no answer
-    hint: working ? "working it out…" : nothing ? "no answer for that" : ""
-    onQueryChanged: nothing = false
+    // the answer (scripts/evaluate.py): title, query, caption, answer, caption, value to
+    // copy; null when the text isn't maths, a conversion, a time or a deadline
+    property var answer: null
+    property string answerFor: ""    // the text it answers (the one before, while the
+                                     // latest is still being worked out)
+    property string asked: ""        // the text being worked out
+    property string waiting: ""      // Enter came before the answer did: how
+    property bool nothing: false     // Enter on text with no answer
+    hint: nothing ? "no answer for that" : ""
+
+    onQueryChanged: {
+        nothing = false;
+        waiting = "";
+        if (worthAsking(query)) {
+            delay.restart();
+        } else {
+            delay.stop();
+            answer = null;
+            answerFor = "";
+        }
+    }
+
+    // (every answer has a number in it, or is "now in tokyo": apps and commands are
+    // searched without starting the evaluator for each key)
+    function worthAsking(text) {
+        return /\d/.test(text) || /^\s*(now|time)\s+in\s+\S/i.test(text);
+    }
+
+    function ask() {
+        const text = query.trim();
+        if (!worthAsking(text))
+            return;
+        if (evaluate.running) {
+            delay.restart();             // (still on the text before: in a moment)
+            return;
+        }
+        asked = text;
+        evaluate.command = [Quickshell.shellPath("scripts/evaluate.py"), text];
+        evaluate.running = true;
+    }
+
+    // Enter (how: "enter", or "alt" to only copy it) on the answer, or on text that
+    // matches nothing: paste it where you were, once it's the answer to what's typed now
+    function useAnswer(how) {
+        const text = query.trim();
+        if (answer && answerFor === text) {
+            Launcher.deliver('wl-copy -- "$1"', answer[5], how === "alt");
+        } else if (worthAsking(text)) {
+            waiting = how;
+            delay.stop();
+            ask();
+        } else {
+            nothing = text !== "";
+        }
+    }
 
     function launch(entry) {
         if (entry.runInTerminal)
@@ -73,11 +127,7 @@ Mode {
 
     function activate(row, how) {
         if (!row) {
-            if (query.trim() !== "") {
-                working = true;
-                evaluate.command = [Quickshell.shellPath("scripts/evaluate.py"), query];
-                evaluate.running = true;
-            }
+            useAnswer(how);
             return;
         }
         if (row.menu) {
@@ -90,21 +140,30 @@ Mode {
         }
     }
 
-    // six lines: title, query, caption, answer, caption, value to copy
+    // (a moment after the last key, so a fast typist doesn't start one for every key)
+    Timer {
+        id: delay
+        interval: 60
+        onTriggered: root.ask()
+    }
+
+    // six lines: title, query, caption, answer, caption, value to copy (or nothing).
+    // (Answers to text that's since changed are dropped: the new text is asked next.)
     Process {
         id: evaluate
         stdout: StdioCollector {
             onStreamFinished: {
-                root.working = false;
-                const f = text.split("\n");
-                if (f.length < 6 || f[5] === "") {
-                    root.nothing = true;
+                if (root.asked !== root.query.trim())
                     return;
-                }
-                Quickshell.execDetached(["wl-copy", "--", f[5]]);
-                Launcher.answer = f.slice(0, 5);
-                Launcher.answerValue = f[5];
-                Launcher.enter("answer");
+                const f = text.split("\n");
+                root.answer = f.length >= 6 && f[5] !== "" ? f.slice(0, 6) : null;
+                root.answerFor = root.asked;
+                const how = root.waiting;
+                root.waiting = "";
+                if (how !== "" && root.answer)
+                    root.useAnswer(how);
+                else if (how !== "")
+                    root.nothing = true;
             }
         }
     }

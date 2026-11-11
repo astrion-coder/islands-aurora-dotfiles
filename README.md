@@ -25,7 +25,8 @@ notifications, login and lock screens.
   grows out of the frame.
 - **Raycast-style launcher.** One menu for apps and commands: clipboard history, emoji,
   file search, a calculator, window switcher, system actions. Type maths, unit and
-  currency conversions, time zones or AoE deadlines and press Enter for an answer card.
+  currency conversions, time zones or AoE deadlines and the answer shows as you type;
+  Enter pastes it.
 - **Themed login and lock.** An SDDM theme on the blurred wallpaper and a lock screen
   that looks the same.
 
@@ -205,8 +206,10 @@ launcher hangs below it, then it all closes back into the frame.
     The graphics card encodes it when it can (on Intel that needs `intel-media-driver`,
     on AMD `libva-mesa-driver`), otherwise the processor does.
   - *Change Wallpaper* (or `Super+W`): see [Changing the wallpaper](#changing-the-wallpaper).
-- **Answers:** type one of these and press `Enter`. A card shows the result, already copied;
-  `Enter` again pastes it into the window you were in, `Alt+1` just closes the card:
+- **Answers:** type one of these and the answer shows as you type, in a card on top of
+  the list (what else matches, or the usual list when nothing does). `Enter` copies it and
+  pastes it into the window you were in; `Alt+1` only copies it. `↓` goes on into the list
+  below it, `↑` back up:
 
 | You type | You get |
 |---|---|

@@ -2,17 +2,21 @@ import QtQuick
 import qs.services
 import qs.widgets
 
-// Maths, conversions, time zones and deadlines from the main menu: what you typed on the
-// left, the answer on the right (already copied). Enter pastes it where you were, Alt+1
-// only copies it, Esc goes back.
-Column {
+// The main menu's answer to maths, conversions, time zones and deadlines, worked out as
+// you type (MainMode.qml), on top of the list: what you typed on the left, the answer on
+// the right. Picked (ringed), Enter pastes it where you were and Alt+1 only copies it;
+// a click pastes it.
+Item {
     id: root
 
     property var answer: []     // title, query, caption, answer, caption
+    property bool picked: true
+    signal chosen
 
-    spacing: 12
+    implicitHeight: 188
 
     Item {
+        id: top
         width: parent.width
         height: title.implicitHeight
 
@@ -24,18 +28,31 @@ Column {
         }
         Label {
             anchors.right: parent.right
+            anchors.baseline: title.baseline
             rightPadding: 6
-            text: "copied, Enter pastes it"
+            text: root.picked ? "Enter pastes it, Alt+1 copies it" : "↑ for the answer"
             color: Theme.muted
             font.pixelSize: 13
         }
     }
 
     Rectangle {
+        id: box
+        y: top.height + 12
         width: parent.width
-        height: 150
+        height: root.height - y
         radius: 16
-        color: Theme.alpha(Theme.fg, 0.08)
+        color: Theme.alpha(Theme.fg, root.picked || click.containsMouse ? 0.10 : 0.06)
+        border.width: root.picked ? 1.5 : 0
+        border.color: Theme.alpha(Theme.accent, 0.6)
+
+        MouseArea {
+            id: click
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: root.chosen()
+        }
 
         component Side: Column {
             id: side
@@ -49,6 +66,7 @@ Column {
                 width: side.width
                 horizontalAlignment: Text.AlignHCenter
                 text: side.main
+                textFormat: Text.PlainText
                 color: side.color
                 font.pixelSize: 34
                 font.weight: Font.Bold
@@ -59,6 +77,7 @@ Column {
                 width: side.width
                 horizontalAlignment: Text.AlignHCenter
                 text: side.caption
+                textFormat: Text.PlainText
                 color: Theme.muted
                 font.pixelSize: 13
                 elide: Text.ElideRight

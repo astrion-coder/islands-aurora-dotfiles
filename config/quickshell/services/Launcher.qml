@@ -7,8 +7,7 @@ import Quickshell.Io
 // The launcher (Raycast-style, replaces rofi): which menu is open. Hyprland's keys call
 //   qs ipc call launcher toggle <menu>
 // with menu = main | clipboard | emoji | files | calc | windows | system | screenshot |
-// record | wallpaper ("answer" is the card the main menu opens for maths and conversions;
-// "record" is the screenshot menu with a recording chosen).
+// record | wallpaper ("record" is the screenshot menu with a recording chosen).
 // Any launcher key pressed while it's open closes it. Esc in a menu opened from the
 // main menu goes back to the main menu.
 Singleton {
@@ -23,8 +22,6 @@ Singleton {
     property real grow: 0               // 0 = the island's shape, 1 = the launcher's
     property var islands: ({})          // each screen's island, by screen name
     property bool fromMain: false
-    property var answer: []             // the answer card: title, query, caption, answer, caption
-    property string answerValue: ""     // ...and what it copies
 
     function show(menu) {
         mode = menu;

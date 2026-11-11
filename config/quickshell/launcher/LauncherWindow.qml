@@ -25,15 +25,23 @@ PanelWindow {
         system: systemMode
     })
     readonly property var mode: modes[Launcher.mode] ?? null
-    readonly property bool answering: Launcher.mode === "answer"
     // (ScreenshotPanel.qml: "record" is the same menu, on its recording row)
     readonly property bool shooting: Launcher.mode === "screenshot" || Launcher.mode === "record"
     // (WallpaperPanel.qml: the search field narrows its pictures down, in a grid)
     readonly property bool picking: Launcher.mode === "wallpaper"
-    readonly property bool custom: answering || shooting                // no search field or list
-    readonly property bool split: !answering && (mode?.preview ?? null) !== null   // list + preview pane
+    readonly property bool custom: shooting                             // no search field or list
+    readonly property bool split: (mode?.preview ?? null) !== null      // list + preview pane
     readonly property int rowHeight: 40
     readonly property int visibleRows: split ? 11 : 8    // taller with a preview pane
+
+    // the main menu's answer (maths, conversions, time zones: MainMode.qml), worked out as
+    // you type and shown on top of the list, picked; ↓ goes on into the list, ↑ back to it.
+    // (It takes five of the list's rows, so the launcher doesn't change size; the rest of
+    // the list scrolls under it.)
+    readonly property bool hasAnswer: mode === mainMode && mainMode.answer !== null
+    readonly property int count: mode?.rows.length ?? 0
+    property bool atAnswer: true
+    readonly property bool answerPicked: hasAnswer && (atAnswer || count === 0)
 
     // opens on the focused screen (chosen when it opens, so it doesn't jump)
     property var target: Quickshell.screens[0]
@@ -68,7 +76,7 @@ PanelWindow {
     readonly property real edgeCurve: Math.min(Theme.tabCurve, (joint - edge) / 2)  // inward, where it leaves the frame
 
     // the launcher's size (it changes between menus, smoothly)
-    property real fullWidth: answering ? 760 : shooting ? 600 : picking ? 780 : split ? 980 : 640
+    property real fullWidth: shooting ? 600 : picking ? 780 : split ? 980 : 640
     property real fullHeight: column.implicitHeight + 28
     Behavior on fullWidth { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
     Behavior on fullHeight { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
@@ -140,6 +148,7 @@ PanelWindow {
     function reset() {
         search.text = "";
         list.currentIndex = 0;
+        atAnswer = true;
         mode?.opened();
         if (picking)
             walls.opened();
@@ -165,7 +174,7 @@ PanelWindow {
             }
         }
         function onModeChanged() {
-            if (Launcher.open && !root.answering)
+            if (Launcher.open)
                 root.reset();
         }
     }
@@ -179,13 +188,27 @@ PanelWindow {
     }
 
     function activate(how) {
-        mode?.activate(mode.rows[list.currentIndex], how);
+        if (answerPicked)
+            mainMode.useAnswer(how);
+        else
+            mode?.activate(mode.rows[list.currentIndex], how);
     }
 
     function move(by) {
-        const n = mode?.rows.length ?? 0;
-        if (n > 0)
+        const n = count;
+        if (n === 0)
+            return;
+        if (answerPicked) {                         // (from the answer down into the list)
+            if (by > 0) {
+                atAnswer = false;
+                list.currentIndex = Math.min(n - 1, by - 1);
+            }
+        } else if (hasAnswer && list.currentIndex + by < 0) {
+            atAnswer = true;                        // (up past the first row: the answer)
+            list.currentIndex = 0;
+        } else {
             list.currentIndex = Math.max(0, Math.min(n - 1, list.currentIndex + by));
+        }
     }
 
     // a click outside the card closes the launcher
@@ -321,7 +344,7 @@ PanelWindow {
             spacing: 12
             opacity: root.reveal
 
-            // ---------- search field (collapsed under the answer card, but keeps focus)
+            // ---------- search field (collapsed under the screenshot menu, but keeps focus)
             Rectangle {
                 width: parent.width
                 height: root.custom ? 0 : 42
@@ -354,7 +377,10 @@ PanelWindow {
                     font.weight: Font.Medium
                     clip: true
                     focus: true
-                    onTextChanged: list.currentIndex = 0
+                    onTextChanged: {
+                        list.currentIndex = 0;
+                        root.atAnswer = true;
+                    }
 
                     Label {
                         anchors.verticalCenter: parent.verticalCenter
@@ -380,9 +406,7 @@ PanelWindow {
                         if (event.key === Qt.Key_Escape)
                             Launcher.back();
                         else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter)
-                            // (an answer: pasted where you were)
-                            root.answering ? Launcher.deliver('wl-copy -- "$1"', Launcher.answerValue, false)
-                                           : root.activate(ctrl ? "ctrl" : shift ? "shift" : "enter");
+                            root.activate(ctrl ? "ctrl" : shift ? "shift" : "enter");
                         else if (event.key === Qt.Key_Up || event.key === Qt.Key_Backtab || (ctrl && (event.key === Qt.Key_K || event.key === Qt.Key_P)))
                             root.move(-1);
                         else if (event.key === Qt.Key_Down || event.key === Qt.Key_Tab || (ctrl && (event.key === Qt.Key_J || event.key === Qt.Key_N)))
@@ -394,7 +418,7 @@ PanelWindow {
                         else if (event.key === Qt.Key_Delete && shift)
                             root.activate("delete");
                         else if (alt && event.key === Qt.Key_1)
-                            root.answering ? Launcher.deliver('wl-copy -- "$1"', Launcher.answerValue, true) : root.activate("alt");
+                            root.activate("alt");
                         else
                             done = false;
                         event.accepted = done;
@@ -419,6 +443,20 @@ PanelWindow {
                 }
             }
 
+            // ---------- the answer: what you typed on the left, the answer right, on top
+            // of the list
+            AnswerCard {
+                width: parent.width
+                height: 5 * root.rowHeight - parent.spacing
+                visible: root.hasAnswer && !root.custom
+                answer: mainMode.answer ?? []
+                picked: root.answerPicked
+                onChosen: {
+                    root.atAnswer = true;
+                    root.activate("enter");
+                }
+            }
+
             // ---------- results (and, for some menus, a preview of the selected one)
             Row {
                 width: parent.width
@@ -428,7 +466,7 @@ PanelWindow {
                 ListView {
                     id: list
                     width: root.split ? (parent.width - parent.spacing) / 2 : parent.width
-                    height: root.visibleRows * root.rowHeight
+                    height: (root.visibleRows - (root.hasAnswer ? 5 : 0)) * root.rowHeight
                     clip: true
                     model: root.mode?.rows ?? []
                     spacing: 0
@@ -448,6 +486,7 @@ PanelWindow {
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
+                            root.atAnswer = false;
                             list.currentIndex = index;
                             root.activate("enter");
                         }
@@ -457,7 +496,7 @@ PanelWindow {
                             anchors.topMargin: 2
                             anchors.bottomMargin: 2
                             radius: 12
-                            color: row.current ? Theme.alpha(Theme.accent, 0.20)
+                            color: row.current && !root.answerPicked ? Theme.alpha(Theme.accent, 0.20)
                                  : row.containsMouse ? Theme.alpha(Theme.fg, 0.06) : "transparent"
                         }
 
@@ -544,13 +583,6 @@ PanelWindow {
                     active: root.split
                     sourceComponent: root.mode?.preview ?? null
                 }
-            }
-
-            // ---------- answer card: what you typed on the left, the answer (copied) right
-            AnswerCard {
-                width: parent.width
-                visible: root.answering
-                answer: Launcher.answer
             }
 
             // ---------- screenshots and recordings: what to take, a delay, drawing on it
