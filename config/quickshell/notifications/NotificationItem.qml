@@ -7,7 +7,8 @@ import qs.services
 import qs.widgets
 
 // One unread notification in the open island. Click: the app's default action (and it's
-// read); right click or ×: close it; its buttons: the app's other actions.
+// read); a link in its text opens; right click or ×: close it; its buttons: the app's
+// other actions. Opening something from it (a click, a link, a button) closes the island.
 Rectangle {
     id: root
 
@@ -17,6 +18,19 @@ Rectangle {
     readonly property var defaultAction: n.actions.find(a => a.identifier === "default") ?? null
     readonly property var buttons: n.actions.filter(a => a.identifier !== "default")
     readonly property var progress: typeof n.hints.value === "number" ? n.hints.value : null
+
+    // something was opened from it: the island closes (DynamicIsland.qml)
+    signal acted
+
+    // run one of its actions, and it's read. (Invoking one already closes a notification
+    // that isn't resident, and this item goes with it: nothing of it is touched after.)
+    function use(action) {
+        const n = root.n, keep = n.resident;
+        root.acted();
+        action.invoke();
+        if (keep)
+            n.dismiss();
+    }
 
     width: parent?.width ?? 320
     implicitHeight: content.implicitHeight + 20
@@ -34,8 +48,9 @@ Rectangle {
         cursorShape: root.defaultAction ? Qt.PointingHandCursor : Qt.ArrowCursor
         onClicked: event => {
             if (event.button === Qt.LeftButton && root.defaultAction)
-                root.defaultAction.invoke();
-            root.n.dismiss();
+                root.use(root.defaultAction);
+            else
+                root.n.dismiss();
         }
     }
 
@@ -103,6 +118,7 @@ Rectangle {
             }
 
             Label {
+                id: body
                 Layout.fillWidth: true
                 visible: text !== ""
                 text: root.n.body
@@ -114,7 +130,16 @@ Rectangle {
                 font.weight: Font.Normal
                 color: Theme.alpha(Theme.fg, 0.8)
                 linkColor: Theme.accent
-                onLinkActivated: link => Qt.openUrlExternally(link)
+                // (a link in it: opened, and the notification's read)
+                onLinkActivated: link => {
+                    root.acted();
+                    Qt.openUrlExternally(Notifs.decode(link));
+                    root.n.dismiss();
+                }
+
+                HoverHandler {
+                    cursorShape: body.hoveredLink || root.defaultAction ? Qt.PointingHandCursor : Qt.ArrowCursor
+                }
             }
 
             // progress (downloads, ...)
@@ -151,10 +176,7 @@ Rectangle {
                         implicitHeight: 24
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            modelData.invoke();
-                            root.n.dismiss();
-                        }
+                        onClicked: root.use(modelData)
 
                         Rectangle {
                             anchors.fill: parent

@@ -21,6 +21,7 @@ PanelWindow {
         emoji: emojiMode,
         files: filesMode,
         calc: calcMode,
+        qr: qrMode,
         windows: windowsMode,
         system: systemMode
     })
@@ -136,6 +137,7 @@ PanelWindow {
     EmojiMode { id: emojiMode; query: root.mode === emojiMode ? search.text : "" }
     FilesMode { id: filesMode; query: root.mode === filesMode ? search.text : "" }
     CalcMode { id: calcMode; query: root.mode === calcMode ? search.text : "" }
+    QrMode { id: qrMode; query: root.mode === qrMode ? search.text : "" }
     WindowsMode { id: windowsMode; query: root.mode === windowsMode ? search.text : "" }
     SystemMode { id: systemMode; query: root.mode === systemMode ? search.text : "" }
 

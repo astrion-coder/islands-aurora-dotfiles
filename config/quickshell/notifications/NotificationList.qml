@@ -8,6 +8,9 @@ import qs.widgets
 ColumnLayout {
     id: root
 
+    // something was opened from one of them (the island closes)
+    signal acted
+
     spacing: 10
 
     RowLayout {
@@ -63,7 +66,9 @@ ColumnLayout {
             Repeater {
                 model: Notifs.list
 
-                NotificationItem {}
+                NotificationItem {
+                    onActed: root.acted()
+                }
             }
         }
     }

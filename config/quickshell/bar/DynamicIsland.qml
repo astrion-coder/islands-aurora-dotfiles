@@ -362,6 +362,7 @@ Item {
             NotificationList {
                 Layout.alignment: Qt.AlignTop
                 visible: Notifs.count > 0
+                onActed: root.open = false      // (out of the way of what it opened)
             }
         }
     }

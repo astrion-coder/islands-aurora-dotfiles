@@ -79,9 +79,15 @@ Singleton {
         return entry ? Quickshell.iconPath(entry.icon, true) : "";
     }
 
+    // markup's entities back to their characters ("&amp;" -> "&"; a link's address, too:
+    // it comes from the markup as written)
+    function decode(text) {
+        return (text ?? "").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, "\"")
+            .replace(/&#39;|&apos;/g, "'").replace(/&amp;/g, "&");
+    }
+
     // plain one-line text from a body that may have markup
     function plain(text) {
-        return (text ?? "").replace(/<[^>]*>/g, "").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-            .replace(/&quot;/g, "\"").replace(/&#39;|&apos;/g, "'").replace(/&amp;/g, "&").replace(/\s+/g, " ").trim();
+        return decode((text ?? "").replace(/<br\s*\/?>/gi, " ").replace(/<[^>]*>/g, "")).replace(/\s+/g, " ").trim();
     }
 }

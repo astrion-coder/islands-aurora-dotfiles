@@ -19,6 +19,7 @@ Mode {
         { title: "Search Emoji", icon: "face-smile", menu: "emoji", meta: "emoji emoticon smiley symbol" },
         { title: "Search Files", icon: "system-search", menu: "files", meta: "files find folder documents open" },
         { title: "Calculator", icon: "accessories-calculator", menu: "calc", meta: "calculator calc math convert units" },
+        { title: "QR Codes", icon: "view-barcode-qr", menu: "qr", meta: "qr codes scanned screenshot links barcode" },
         { title: "Switch Windows", icon: "preferences-system-windows", menu: "windows", meta: "windows switch window focus" },
         { title: "Screenshot", icon: "camera-photo", menu: "screenshot", meta: "screenshot screen capture snip grab print picture" },
         { title: "Record Screen", icon: "media-record", menu: "record", meta: "record recording screen video capture screencast" },
