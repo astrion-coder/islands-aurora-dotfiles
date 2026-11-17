@@ -7,10 +7,10 @@
 # After DELAY seconds (counted down in the island), it's copied to the clipboard and saved
 # to ~/Pictures/Screenshots, and the island says so, with buttons to open it or draw on it
 # (satty). EDIT=1 opens it to draw on straight away.
-# QR codes in it (read with zbar, when it's installed: qr-codes.py) are shown in the
-# notification: one link opens on a click, and its text can be copied; several are listed,
-# and a click (or "All N codes") opens them all in the launcher's QR Codes menu, which
-# keeps the ones found lately.
+# QR codes and links in it (read with zbar and tesseract, when they're installed:
+# qr-codes.py) are shown in the notification: one link opens on a click, a QR code's text
+# can be copied; several are listed, and a click (or "Show all") opens them all in the
+# launcher's Links & QR Codes menu, which keeps the ones found lately.
 # (Videos: record.sh. Picking, in the shell's colours: pick.sh.)
 here=$(dirname "$(readlink -f "$0")")
 . "$here/pick.sh"
@@ -41,13 +41,29 @@ if [ "$edit" = 1 ]; then
     exit 0
 fi
 
-# QR codes in it, in reading order (about 150 ms for a whole screen; light codes on dark
-# backgrounds too, as dark-themed pages and videos show them)
-mapfile -d '' codes < <(python3 "$here/qr-codes.py" scan "$file" 2>/dev/null)
+# QR codes and links written in it, in reading order ("qr" or "text", a tab, the code;
+# about 0.7 s for a whole screen, most of it reading the text)
+mapfile -d '' found < <(python3 "$here/qr-codes.py" scan "$file" 2>/dev/null)
+codes=()
+qrs=0 links=0
+for item in "${found[@]}"; do
+    codes+=("${item#*$'\t'}")
+    if [ "${item%%$'\t'*}" = qr ]; then qrs=$((qrs + 1)); else links=$((links + 1)); fi
+done
 count=${#codes[@]}
 qr=${codes[0]-}
 link=""
 [[ $qr =~ ^https?://[^[:space:]]+$ ]] && link=$qr
+
+# "with a QR code", "with 2 links", "with a QR code and 3 links"
+found_what() {
+    local parts=()
+    (( qrs == 1 )) && parts+=("a QR code")
+    (( qrs > 1 )) && parts+=("$qrs QR codes")
+    (( links == 1 )) && parts+=("a link")
+    (( links > 1 )) && parts+=("$links links")
+    printf 'with %s' "${parts[0]}${parts[1]:+ and ${parts[1]}}"
+}
 
 # (for the notification's text, which may have markup: <a href=...>)
 escape() {
@@ -76,23 +92,24 @@ all_codes() {
     qs ipc call launcher open qr >/dev/null 2>&1
 }
 
-# say so, with its picture; clicking it opens the picture (or the QR code's link, or all
-# the codes), the buttons copy the QR code, list them all, open the picture or draw on it
+# say so, with its picture; clicking it opens the picture (or the link, or all of what
+# was found), the buttons copy the link or code, list them all, open the picture or draw
+# on it
 name=$(basename "$file")
 if (( count > 1 )); then
     action=$(notify-send -a Screenshot -i "$file" -h "string:image-path:$file" \
-        -A default="All codes" -A all="All $count codes" -A picture="Open screenshot" -A edit="Draw on it" \
-        -- "Screenshot copied, with $count QR codes" "$(lines)")
+        -A default="Show all" -A all="Show all $count" -A picture="Open screenshot" -A edit="Draw on it" \
+        -- "Screenshot copied, $(found_what)" "$(lines)")
 elif [ -n "$link" ]; then
     shown=$(escape "$link")
     action=$(notify-send -a Screenshot -i "$file" -h "string:image-path:$file" \
         -A default="Open link" -A copy="Copy link" -A picture="Open screenshot" -A edit="Draw on it" \
-        -- "Screenshot copied, with a QR code" "<a href=\"$shown\">$shown</a>")
+        -- "Screenshot copied, $(found_what)" "<a href=\"$shown\">$shown</a>")
 elif [ -n "$qr" ]; then
     text=${qr//$'\n'/ }
     action=$(notify-send -a Screenshot -i "$file" -h "string:image-path:$file" \
         -A default=Open -A copy="Copy text" -A edit="Draw on it" \
-        -- "Screenshot copied, with a QR code" "$(escape "${text:0:240}")")
+        -- "Screenshot copied, $(found_what)" "$(escape "${text:0:240}")")
 else
     action=$(notify-send -a Screenshot -i "$file" -h "string:image-path:$file" \
         -A default=Open -A edit="Draw on it" \

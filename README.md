@@ -188,11 +188,12 @@ launcher hangs below it, then it all closes back into the frame.
     in (and copies it), `Alt+1` only copies it, `Ctrl+Enter` saves it to the history
     underneath.
   - *Windows:* `Enter` or a click jumps to the window, switching workspace if needed.
-  - *QR Codes:* the QR codes found in your screenshots (the last 100), the latest first.
-    `Enter` opens a link (`Shift+Enter` opens it and keeps the list open, for the next
-    one) or pastes a code's text where you were, `Alt+1` only copies it, `Shift+Delete`
-    forgets it. They're kept in `~/.local/state/quickshell-qr-codes.json`, readable only
-    by you (a Wi-Fi code holds its password).
+  - *Links & QR Codes:* the links and QR codes found in your screenshots (the last 100),
+    the latest first, each marked *QR code* or *on screen* (a link written in the
+    picture). `Enter` opens a link (`Shift+Enter` opens it and keeps the list open, for
+    the next one) or pastes a code's text where you were, `Alt+1` only copies it,
+    `Shift+Delete` forgets it. They're kept in `~/.local/state/quickshell-qr-codes.json`,
+    readable only by you (a Wi-Fi code holds its password).
   - *Screenshot* / *Record Screen* (or `Super+Shift+P`, or `Print`): one menu, growing
     out of the island, for both. **Screenshot**: an **Area** (drag a rectangle; `Esc`
     cancels), a **Window** (click one) or the **Screen**, and *draw on it after* (`E`),
@@ -203,13 +204,16 @@ launcher hangs below it, then it all closes back into the frame.
     `Enter`; the menu goes away as it starts.
     Every screenshot is copied to the clipboard and saved in `~/Pictures/Screenshots`,
     and the island says so, with buttons to open it or draw on it. If it has QR codes in
-    it (dark ones, or light ones on a dark background), the notification shows what they
-    say. One link opens in your browser when you click the notification (*Copy link*
-    copies it instead); other codes (Wi-Fi details, text) can be copied. With several,
-    clicking the notification (or *All N codes*) opens them all in the launcher's
-    *QR Codes* menu, to open or copy one by one. QR codes are read with
-    [zbar](https://github.com/mchehab/zbar) (`sudo pacman -S zbar`; without it,
-    screenshots work as before).
+    it (dark ones, or light ones on a dark background) or links written in it (with or
+    without `https://`, like `github.com/…`, `t.me/…` or `www.…`; file names like
+    `README.md` don't count), the notification shows them. One link opens in your browser
+    when you click the notification (*Copy link* copies it instead); other codes (Wi-Fi
+    details, text) can be copied. With several, clicking the notification (or *Show all*)
+    opens them all in the launcher's *Links & QR Codes* menu, to open or copy one by one.
+    QR codes are read with [zbar](https://github.com/mchehab/zbar) and links with
+    [Tesseract](https://github.com/tesseract-ocr/tesseract) (`sudo pacman -S zbar tesseract
+    tesseract-data-eng`; without them, screenshots work as before). Reading the text takes
+    about half a second, so the notification comes that much later.
     While a recording runs, the island shows a red dot and the time: click it to stop (it
     turns into a stop button when you point at it), or press `Super+Shift+P` and `Enter`.
     The video is saved in `~/Videos/Recordings` (MP4) and copied as a file, so you can

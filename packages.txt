@@ -38,6 +38,8 @@ khal              # the island's calendar reads your calendars through it
 slurp             # screenshots: picking an area or a window (grim takes them)
 satty             # screenshots: drawing on them
 zbar              # screenshots: reading QR codes in them
+tesseract         # screenshots: reading links written in them...
+tesseract-data-eng  # ...in English
 wf-recorder       # screen recordings (ffmpeg comes with it: the encoder check and thumbnails)
 libnotify
 
