@@ -104,6 +104,27 @@ this order:
 Do this on **one** machine only: the box lives on the machine that runs it, and your
 phone and Mac use the address it gives.
 
+**Tailnet Lock (if your tailnet uses it).** With
+[Tailnet Lock](https://tailscale.com/kb/1226/tailnet-lock) on (`tailscale lock`), a new or
+reinstalled machine starts out *locked out*: it's on the tailnet, but your phone and Mac
+won't talk to it, so the calendar sync and the Shared Box can't reach them. After `sudo
+tailscale up`, and before the setup scripts above:
+
+1. Run `tailscale lock status` here. It says the machine is locked out and prints the
+   command that signs it, `tailscale lock sign nodekey:… tlpub:…`.
+2. Run that command on a trusted device (one of the *Trusted signing keys* that
+   `tailscale lock status` lists; on the Mac, in Terminal:
+   `/Applications/Tailscale.app/Contents/MacOS/Tailscale lock sign …`).
+3. If this machine was one of the trusted signing keys before a reinstall, its new key
+   isn't one yet: from the Mac, add the new one (`tailscale lock add tlpub:…`, the key
+   `tailscale lock status` shows here as *This node's tailnet-lock key*) and remove the
+   old one (`tailscale lock remove tlpub:…`), so two devices can still sign.
+
+Tailnet Lock itself is set up once for the whole tailnet, by hand (`tailscale lock init`
+with the trusted devices' keys; keep the disablement secrets it prints somewhere safe,
+away from this machine). `install.sh` doesn't touch it, and reinstalling a machine
+doesn't undo it.
+
 Options:
 
 | Option | Effect |
@@ -427,6 +448,12 @@ empty server would empty their calendars too. Before wiping the machine:
 After `install.sh`, put `~/.local/share/radicale/` back where it was, *then* run the
 setup script. Give it the same username and password as before, so your Mac and phone
 keep working, and it carries on with the calendars that are there.
+
+If your tailnet uses Tailnet Lock, the reinstalled machine is locked out until it's
+signed, and your Mac and phone can't reach its server meanwhile: sign it from the Mac
+first, before the setup script (see the Tailnet Lock note under [Install](#install)). Its
+new key isn't a trusted signing key yet either; the same note says how to swap it in for
+the old one.
 
 ### Setting up the Shared Box
 
