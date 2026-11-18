@@ -80,6 +80,30 @@ reinstalling the machine that already is the server, read
 [Reinstalling the server](#reinstalling-the-server) first, or your Mac's calendars can be
 emptied.
 
+**Shared Box (optional).** Only if you want the [Shared Box](#the-shared-box): text, links
+and files shared with your phone (Android or iPhone) and Mac. After that first login, in
+this order:
+
+1. In the [Tailscale admin console](https://login.tailscale.com/admin/dns), on the *DNS*
+   page, turn on MagicDNS and HTTPS certificates (once per tailnet; done already if you
+   set up the calendar sync).
+2. Put this machine on your tailnet, logging in with the same account as your phone and
+   Mac (done already if you set up the calendar sync):
+   ```sh
+   sudo systemctl enable --now tailscaled
+   sudo tailscale up
+   ```
+3. Start the box and make it reachable from your devices (it asks for your password
+   once, and shows the box's address as a QR code to scan with your phone):
+   ```sh
+   ~/.config/quickshell/scripts/shared-box-setup.sh
+   ```
+4. Open it on your phone and Mac, as in
+   [Setting up the Shared Box](#setting-up-the-shared-box).
+
+Do this on **one** machine only: the box lives on the machine that runs it, and your
+phone and Mac use the address it gives.
+
 Options:
 
 | Option | Effect |
@@ -125,6 +149,7 @@ Options:
 | `Super+Shift+P` / `Print` | Screenshot and recording menu, out of the island (while recording: shows it, `Enter` stops it) |
 | `Shift+Print` / `Alt+Print` / `Ctrl+Print` | Screenshot of an area / a window / the screen, straight away |
 | `Super+W` | Wallpaper picker, out of the island |
+| `Super+I` | The [Shared Box](#the-shared-box): send text and links to your phone and Mac |
 | `Super+Escape` | Lock screen |
 | `Super+M` | Log out |
 | `Super+H/J/K/L` or arrows | Move focus |
@@ -166,7 +191,7 @@ launcher hangs below it, then it all closes back into the frame.
 - **Apps and commands:** type a name. Commands like *Clipboard History*, *Search Emoji*,
   *Search Files*, *Calculator*, *Switch Windows* and *Shut Down* also match partial words
   ("paste", "sleep", "math"). Apps you open often come first. In a sub-menu, `Esc` goes
-  back to the main menu; any launcher key pressed again closes it.
+  back to the menu you came from; any launcher key pressed again closes it.
 - **Moving around:** `↑`/`↓` (or `Tab`, `Ctrl+J`/`Ctrl+K`), `Enter` to choose, or click.
 - **Pasting:** whatever the launcher hands back (a clipboard entry, a result, an answer)
   is pasted where your cursor was, as a real paste: `Ctrl+Shift+V` in terminals, `Ctrl+V`
@@ -183,7 +208,8 @@ launcher hangs below it, then it all closes back into the frame.
     the address.
   - *Emoji:* search by name or keyword ("lol"). `Enter` types the emoji into the window you
     were in (and copies it), `Alt+1` only copies it.
-  - *Files:* searches your home folder (skipping hidden and git-ignored files); `Enter` opens.
+  - *Files:* searches your home folder (skipping hidden and git-ignored files); `Enter` opens,
+    `Ctrl+Enter` sends it to your phone or Mac (see [The Shared Box](#the-shared-box)).
   - *Calculator:* the result updates as you type. `Enter` pastes it into the window you were
     in (and copies it), `Alt+1` only copies it, `Ctrl+Enter` saves it to the history
     underneath.
@@ -222,6 +248,7 @@ launcher hangs below it, then it all closes back into the frame.
     The graphics card encodes it when it can (on Intel that needs `intel-media-driver`,
     on AMD `libva-mesa-driver`), otherwise the processor does.
   - *Change Wallpaper* (or `Super+W`): see [Changing the wallpaper](#changing-the-wallpaper).
+  - *Shared Box* (or `Super+I`): see [The Shared Box](#the-shared-box).
 - **Answers:** type one of these and the answer shows as you type, in a card on top of
   the list (what else matches, or the usual list when nothing does). `Enter` copies it and
   pastes it into the window you were in; `Alt+1` only copies it. `↓` goes on into the list
@@ -239,6 +266,36 @@ The local currency is set as `LOCAL_CURRENCY` near the top of
 [`config/quickshell/scripts/evaluate.py`](config/quickshell/scripts/evaluate.py) (default `inr`).
 Exchange rates come from `qalc`, and `qalc-rates.timer` refreshes them daily; that's the
 only automatic download (apart from Oh My Zsh's own update check).
+
+## The Shared Box
+
+One box for text, links and files, shared between this PC and your phone and Mac (Android
+and iPhone alike) over [Tailscale](https://tailscale.com), and nowhere else: no cloud, and
+only your own devices, signed in as you, can reach it. This PC serves it
+([`shared-box.py`](config/quickshell/scripts/shared-box.py)); your other devices open it as a
+web page, which on a phone installs as an app.
+
+- **Setting it up:** once, after `install.sh`: see
+  [Setting up the Shared Box](#setting-up-the-shared-box) (a script here, then your phone
+  and Mac). On a phone it installs as an app, and on Android it's then in every app's
+  share menu.
+- **The page:** type or paste and *Send* (on a computer `Enter` sends, `Shift+Enter` is a
+  new line). Everything in the box shows, the newest first, on every device at once, each
+  with where it came from: links to open, *Copy*, *Download* for files, *Remove*.
+- **On this PC:** `Super+I` (or *Shared Box* in the launcher). Type and press `Enter` to
+  send it to all your devices (`Shift+Enter`: and stay). Below is what's in the box:
+  `Enter` opens a link or file or pastes text where you were, `Alt+1` only copies,
+  `Shift+Delete` takes it out of the box everywhere. What arrives from another device
+  shows as a notification: click it to open the link (or copy the text, or open the file).
+- **Files** go over Taildrop: on your phone or Mac, share a file and pick *Tailscale* →
+  this PC. It lands in `~/Downloads` (a name that's taken gets a number), shows as a
+  notification and in the box, where your other devices can download it too. To send a
+  file from this PC: find it with `Super+F` (or pick it in the box) and press `Ctrl+Enter`,
+  then pick a device (it needs to be online, with Tailscale on) or *The Shared Box*.
+
+What's in the box is kept in `~/.local/share/shared-box/items.json` (the last 300, readable
+only by you); files stay where they are, and the box only points at them. The page uses
+the desktop's colours. Like the calendar, it only works while this PC is on.
 
 ## The dynamic island
 
@@ -370,6 +427,58 @@ empty server would empty their calendars too. Before wiping the machine:
 After `install.sh`, put `~/.local/share/radicale/` back where it was, *then* run the
 setup script. Give it the same username and password as before, so your Mac and phone
 keep working, and it carries on with the calendars that are there.
+
+### Setting up the Shared Box
+
+The [Shared Box](#the-shared-box) reaches your phone and Mac the same way, over
+[Tailscale](https://tailscale.com), without any cloud: this machine runs the box
+([`shared-box.py`](config/quickshell/scripts/shared-box.py)) on a socket only it can open,
+Tailscale makes it reachable over HTTPS from your own devices (and nobody else; only
+devices signed in as you get in), and files go over Taildrop, which a small receiver
+([`taildrop-receive.sh`](config/quickshell/scripts/taildrop-receive.sh)) takes in as they
+arrive.
+
+1. **This machine on your tailnet**, if it isn't yet (it is, once the calendar sync is
+   set up): `sudo systemctl enable --now tailscaled`, then `sudo tailscale up` and log in
+   with the same account as your phone and Mac. In the Tailscale admin console, *DNS*
+   should have MagicDNS and HTTPS certificates turned on.
+2. **Run** `~/.config/quickshell/scripts/shared-box-setup.sh`. It starts the box and the
+   Taildrop receiver (the user services `shared-box` and `taildrop-receive`), serves the
+   box to your tailnet on port 443, and prints its address (like
+   `https://yourmachine.your-tailnet.ts.net/`) with a QR code of it to scan with your
+   phone. Tailscale only lets root point it at the box's socket, so the script asks for
+   your password once; the setting stays through restarts. OpenSnitch needs no rule for
+   it (the box has a socket, not a network port). Run the script again any time to repair
+   it.
+3. **On the Android phone** (with Tailscale on): scan the QR code, or open the address in
+   Chrome, then menu (`⋮`) → *Add to home screen* → *Install*. *Shared Box* is then an
+   app, and in every app's share menu: share a link or text to it and it lands in the box.
+   For files: share a file → *Tailscale* → this machine.
+4. **On the Mac:** open the address in a browser and keep it handy (in Safari: File →
+   *Add to Dock*, for an app of its own). For files: share them with Taildrop (in Finder,
+   Share → *Taildrop*) to this machine.
+5. **On the iPhone** (with Tailscale on): open the address in Safari, then Share → *Add to
+   Home Screen*. For files: share a file → *Tailscale* → this machine.
+
+What you send shows on every device at once; what comes in from your phone or Mac shows
+here as a notification. Files sent to this machine land in `~/Downloads` and show in the
+box, where your other devices can download them. Files from this machine (`Super+F`, or
+in the box: `Ctrl+Enter`) go straight to the device you pick, which has to be on, with
+Tailscale running: Taildrop doesn't keep them for later. Like the calendar, the box is
+only there while this machine is on.
+
+**One box per machine.** The box lives on the machine that runs it. Run the setup script
+on one machine; your phone and Mac use the address it gives.
+
+#### Turning it off
+
+```sh
+systemctl --user disable --now shared-box.service taildrop-receive.service
+sudo tailscale serve --https=443 off
+```
+
+The calendar's port (8443) stays as it is. What was in the box stays in
+`~/.local/share/shared-box/` until you delete it.
 
 ## The lock screen
 

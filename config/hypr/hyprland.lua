@@ -321,6 +321,7 @@ hl.bind(mainMod .. " + X",         hl.dsp.exec_cmd(menu .. " system"))
 -- Wallpapers (quickshell/launcher/WallpaperPanel.qml): a grid of ~/Pictures/Wallpapers;
 -- each new one comes in with a transition picked at random (quickshell/scripts/wallpaper.sh)
 hl.bind(mainMod .. " + W",         hl.dsp.exec_cmd(menu .. " wallpaper"))
+hl.bind(mainMod .. " + I",         hl.dsp.exec_cmd(menu .. " shared"))      -- the Shared Box (shared-box.py)
 -- Screenshots and screen recordings (quickshell/launcher/ScreenshotPanel.qml): Super+Shift+P
 -- (or Print) opens the menu, growing out of the island like the launcher: a screenshot or
 -- a recording of an area, a window or the screen, with a delay, drawing on it after, the

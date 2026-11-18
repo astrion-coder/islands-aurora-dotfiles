@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101418">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Shared Box">
+<title>Shared Box</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<!-- The Shared Box (shared-box.py serves it, with the desktop's colours filled in below):
+     text and links sent from any of your devices show on all of them, live; files sent to
+     the PC over Taildrop show here to download. -->
+<style>
+:root {
+    /*COLORS*/
+    --card: color-mix(in srgb, var(--fg) 7%, var(--base));
+    --line: color-mix(in srgb, var(--fg) 12%, transparent);
+    --radius: 16px;
+    color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+    margin: 0;
+    background: var(--base);
+    color: var(--fg);
+    font: 15px/1.45 "Noto Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+             max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+}
+main { max-width: 720px; margin: 0 auto; }
+header { display: flex; align-items: center; gap: 10px; margin: 4px 2px 14px; }
+h1 { font-size: 20px; margin: 0; letter-spacing: 0.01em; }
+.status { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); transition: background .3s; }
+.status.live { background: var(--accent); box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 60%, transparent); }
+header .you { margin-left: auto; color: var(--muted); font-size: 13px; }
+
+form {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 10px 10px 8px 14px;
+    transition: border-color .15s;
+}
+form:focus-within { border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
+textarea {
+    width: 100%;
+    min-height: 3.2em;
+    max-height: 40vh;
+    resize: none;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--fg);
+    font: inherit;
+    padding: 4px 0;
+}
+textarea::placeholder { color: var(--muted); }
+.row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.hint { color: var(--muted); font-size: 12.5px; margin-right: auto; }
+.hint.bad { color: var(--error); }
+
+button, .button {
+    font: inherit;
+    font-size: 14px;
+    border: 0;
+    border-radius: 999px;
+    padding: 7px 16px;
+    cursor: pointer;
+    color: var(--subtle);
+    background: color-mix(in srgb, var(--fg) 9%, transparent);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    -webkit-tap-highlight-color: transparent;
+}
+button:hover, .button:hover { color: var(--accent); background: color-mix(in srgb, var(--fg) 14%, transparent); }
+button.primary { background: linear-gradient(90deg, var(--accent), var(--accent2)); color: var(--ink); font-weight: 600; }
+button.primary:hover { filter: brightness(1.06); color: var(--ink); }
+button:disabled { opacity: .5; cursor: default; }
+button.danger:hover { color: var(--error); }
+
+ul { list-style: none; margin: 16px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+li {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 10px 12px 10px 14px;
+}
+li.new { animation: in .3s ease-out; }
+@keyframes in { from { opacity: 0; transform: translateY(-4px); } }
+.meta { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12.5px; }
+.meta .from { color: var(--subtle); font-weight: 600; }
+.meta .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--muted); }
+.content { margin: 4px 0 6px; overflow-wrap: anywhere; }
+.content.text { white-space: pre-wrap; }
+.content a { color: var(--accent); }
+.content.link a { font-weight: 600; }
+.file { display: flex; align-items: center; gap: 10px; }
+.file .name { font-weight: 600; }
+.file .size { color: var(--muted); font-size: 13px; }
+.file.gone .name { color: var(--muted); text-decoration: line-through; }
+.actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.actions button, .actions .button { padding: 5px 12px; font-size: 13px; }
+.actions .remove { margin-left: auto; }
+.empty { color: var(--muted); text-align: center; margin: 40px 12px; }
+footer { margin: 22px 4px 0; color: var(--muted); font-size: 13px; display: flex; gap: 12px; align-items: flex-start; }
+footer p { margin: 0; flex: 1; }
+footer b { color: var(--subtle); }
+.toast {
+    position: fixed; left: 50%; bottom: max(24px, env(safe-area-inset-bottom)); transform: translate(-50%, 20px);
+    background: var(--accent); color: var(--ink); font-weight: 600; font-size: 14px;
+    padding: 8px 18px; border-radius: 999px; opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+@media (prefers-reduced-motion: reduce) { li.new { animation: none; } .toast { transition: none; } }
+</style>
+</head>
+<body>
+<main>
+    <header>
+        <span id="status" class="status" title="connecting…"></span>
+        <h1>Shared Box</h1>
+        <span id="you" class="you"></span>
+    </header>
+
+    <form id="compose" autocomplete="off">
+        <textarea id="text" rows="2" placeholder="Text or a link, for all your devices" aria-label="Text or a link to send"></textarea>
+        <div class="row">
+            <span id="hint" class="hint"></span>
+            <button type="button" id="paste" hidden>Paste</button>
+            <button type="submit" id="send" class="primary">Send</button>
+        </div>
+    </form>
+
+    <ul id="items" aria-live="polite"></ul>
+    <p id="empty" class="empty" hidden>Nothing here yet. What you send shows up on all your devices.</p>
+
+    <footer>
+        <p>Files: send them to <b id="host"></b> with Taildrop (<i>Tailscale</i> in the share menu); they show up here too.</p>
+        <button id="clear" class="danger" hidden>Clear all</button>
+    </footer>
+</main>
+<div id="toast" class="toast" role="status"></div>
+
+<script>
+"use strict";
+const START = /*START*/null;
+const $ = selector => document.querySelector(selector);
+const list = $("#items"), field = $("#text"), hint = $("#hint");
+const touch = matchMedia("(pointer: coarse)").matches;
+const URL_RE = /https?:\/\/[^\s<>"']*[^\s<>"'.,;:!?)\]]/gi;
+let state = START || { items: [], you: "", host: "", version: -1 };
+
+// ---------- talking to the box
+async function api(method, path, body) {
+    const response = await fetch(path, {
+        method,
+        headers: { "X-Shared-Box": "1", "Content-Type": "application/json" },
+        body: body === undefined ? undefined : JSON.stringify(body),
+    });
+    if (!response.ok)
+        throw new Error((await response.text()).trim() || response.statusText);
+    return response.status === 204 ? null : response.json();
+}
+
+async function refresh() {
+    try {
+        state = await api("GET", "/api/items");
+        render();
+    } catch (e) {
+        live(false);
+    }
+}
+
+// live: the server says when the box changes
+function listen() {
+    const events = new EventSource("/api/events");
+    events.onopen = () => live(true);
+    events.onerror = () => live(false);
+    events.onmessage = event => {
+        live(true);
+        if (Number(event.data) !== state.version)
+            refresh();
+    };
+}
+
+function live(on) {
+    $("#status").classList.toggle("live", on);
+    $("#status").title = on ? "live" : "reconnecting…";
+}
+
+// ---------- showing it
+function when(seconds) {
+    const d = new Date(seconds * 1000), now = new Date();
+    const minutes = (now - d) / 60000;
+    const time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    if (minutes < 1) return "just now";
+    if (minutes < 60) return `${Math.floor(minutes)} min ago`;
+    const days = Math.round((new Date(now.getFullYear(), now.getMonth(), now.getDate())
+                           - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 86400000);
+    if (days === 0) return time;
+    if (days === 1) return `yesterday ${time}`;
+    return d.toLocaleDateString([], { day: "numeric", month: "short", year: d.getFullYear() === now.getFullYear() ? undefined : "numeric" }) + ` ${time}`;
+}
+
+function size(bytes) {
+    const units = ["bytes", "KB", "MB", "GB"];
+    let i = 0;
+    while (bytes >= 1000 && i < units.length - 1) { bytes /= 1000; i++; }
+    return `${i ? bytes.toFixed(bytes < 10 ? 1 : 0) : bytes} ${units[i]}`;
+}
+
+function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+}
+
+function link(url, text) {
+    const a = el("a", "", text ?? url);
+    a.href = url;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    return a;
+}
+
+// text, with its web addresses as links
+function linkify(node, text) {
+    let last = 0;
+    for (const m of text.matchAll(URL_RE)) {
+        node.append(text.slice(last, m.index), link(m[0]));
+        last = m.index + m[0].length;
+    }
+    node.append(text.slice(last));
+}
+
+function button(label, action, className) {
+    const b = el("button", className || "", label);
+    b.type = "button";
+    b.addEventListener("click", action);
+    return b;
+}
+
+function card(item, fresh) {
+    const li = el("li", fresh ? "new" : "");
+    const meta = el("div", "meta");
+    meta.append(el("span", "from", item.from === state.you ? "This device" : item.from), el("span", "dot"),
+                el("time", "", when(item.time)));
+    meta.querySelector("time").dateTime = new Date(item.time * 1000).toISOString();
+    const content = el("div", "content " + item.kind);
+    const actions = el("div", "actions");
+
+    if (item.kind === "file") {
+        const row = el("div", "file" + (item.gone ? " gone" : ""));
+        row.append(el("span", "name", item.text), el("span", "size", item.gone ? "not there any more" : size(item.size)));
+        content.append(row);
+        if (!item.gone) {
+            const a = el("a", "button", "Download");
+            a.href = `/files/${item.id}/${encodeURIComponent(item.text)}`;
+            a.download = item.text;
+            actions.append(a);
+        }
+    } else {
+        if (item.kind === "link")
+            content.append(link(item.text));
+        else
+            linkify(content, item.text);
+        actions.append(button("Copy", event => copy(item.text, event.target)));
+        if (item.kind === "link") {
+            const open = link(item.text, "Open");
+            open.className = "button";
+            actions.append(open);
+        }
+    }
+    actions.append(button("Remove", () => remove(item.id), "remove danger"));
+    li.append(meta, content, actions);
+    return li;
+}
+
+// (only what's new since last time comes in with a little animation)
+let shown = null;
+function render() {
+    const before = shown;
+    shown = new Set(state.items.map(i => i.id));
+    list.replaceChildren(...state.items.map(i => card(i, before !== null && !before.has(i.id))));
+    $("#empty").hidden = state.items.length > 0;
+    $("#clear").hidden = state.items.length === 0;
+    $("#host").textContent = state.host || "the PC";
+    $("#you").textContent = state.you ? `on ${state.you}` : "";
+    clearing = false;
+    $("#clear").textContent = "Clear all";
+}
+
+function toast(text) {
+    const t = $("#toast");
+    t.textContent = text;
+    t.classList.add("show");
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(() => t.classList.remove("show"), 1600);
+}
+
+// ---------- doing things
+async function copy(text, target) {
+    try {
+        await navigator.clipboard.writeText(text);
+    } catch (e) {
+        // (older browsers: through a hidden text field)
+        const area = el("textarea");
+        area.value = text;
+        area.style.position = "fixed";
+        area.style.opacity = "0";
+        document.body.append(area);
+        area.select();
+        document.execCommand("copy");
+        area.remove();
+    }
+    if (target) {
+        target.textContent = "Copied";
+        setTimeout(() => target.textContent = "Copy", 1400);
+    }
+}
+
+async function remove(id) {
+    try {
+        await api("DELETE", `/api/items/${id}`);
+        state.items = state.items.filter(i => i.id !== id);
+        render();
+    } catch (e) {
+        toast("Couldn't remove it");
+    }
+}
+
+let clearing = false;
+$("#clear").addEventListener("click", async () => {
+    if (!clearing) {
+        clearing = true;
+        $("#clear").textContent = touch ? "Tap again to clear" : "Click again to clear";
+        setTimeout(() => { clearing = false; $("#clear").textContent = "Clear all"; }, 3000);
+        return;
+    }
+    try {
+        await api("DELETE", "/api/items");
+        refresh();
+    } catch (e) {
+        toast("Couldn't clear it");
+    }
+});
+
+$("#compose").addEventListener("submit", async event => {
+    event.preventDefault();
+    const text = field.value.trim();
+    if (!text)
+        return field.focus();
+    $("#send").disabled = true;
+    try {
+        await api("POST", "/api/items", { text });
+        field.value = "";
+        grow();
+        setHint();
+        await refresh();
+        toast("Sent");
+    } catch (e) {
+        setHint(e.message || "Couldn't send it", true);
+    } finally {
+        $("#send").disabled = false;
+    }
+});
+
+// Enter sends (Shift+Enter: a new line); on a phone, Enter is a new line and the button sends
+field.addEventListener("keydown", event => {
+    if (event.key === "Enter" && !event.isComposing && (event.ctrlKey || event.metaKey || (!touch && !event.shiftKey))) {
+        event.preventDefault();
+        $("#compose").requestSubmit();
+    }
+});
+
+function grow() {
+    field.style.height = "auto";
+    field.style.height = field.scrollHeight + "px";
+}
+field.addEventListener("input", () => { grow(); setHint(); });
+
+function setHint(text, bad) {
+    hint.textContent = text ?? (touch ? "" : "Enter sends, Shift+Enter: a new line");
+    hint.classList.toggle("bad", !!bad);
+}
+
+// Paste (where the browser lets a page read the clipboard)
+if (navigator.clipboard && navigator.clipboard.readText) {
+    const paste = $("#paste");
+    paste.hidden = false;
+    paste.addEventListener("click", async () => {
+        try {
+            const text = await navigator.clipboard.readText();
+            field.value += (field.value && !field.value.endsWith("\n") ? "\n" : "") + text;
+            grow();
+            field.focus();
+        } catch (e) {
+            toast("The browser didn't allow pasting");
+        }
+    });
+}
+
+// ---------- start
+setHint();
+render();
+listen();
+document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
+setInterval(() => { for (const t of document.querySelectorAll("time")) t.textContent = when(Date.parse(t.dateTime) / 1000); }, 30000);
+if (new URLSearchParams(location.search).has("shared")) {
+    toast("Added to the box");
+    history.replaceState(null, "", "/");
+}
+if ("serviceWorker" in navigator)
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+</script>
+</body>
+</html>

@@ -7,10 +7,15 @@ import Quickshell.Services.Pam
 // The lock screen's state and password check (replaces hyprlock). Lock with
 //   qs ipc call lock lock
 // The password goes through PAM's "login" service, like hyprlock's.
+// Whether it's locked is kept in a file ($XDG_RUNTIME_DIR/quickshell-locked), read the
+// moment this starts: a reload of the shell (it reloads when its files change) or a
+// restart starts this afresh, and without the file that would unlock the screen.
 Singleton {
     id: root
 
     property bool locked: false
+    onLockedChanged: lockFile.setText(locked ? "locked\n" : "")
+    Component.onCompleted: locked = lockFile.text().trim() === "locked"
     property bool unlocking: false      // fading out after the right password
     property bool busy: false           // checking a password
     property string message: ""         // "wrong password", or what PAM says
@@ -83,6 +88,13 @@ Singleton {
                 root.message = "";
             }
         }
+    }
+
+    FileView {
+        id: lockFile
+        path: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/quickshell-locked"
+        blockAllReads: true         // (read at once, before the lock screen asks)
+        printErrors: false
     }
 
     IpcHandler {

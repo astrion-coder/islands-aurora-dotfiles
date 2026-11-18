@@ -1,0 +1,13 @@
+[Unit]
+Description=Shared Box: text, links and files shared with your phone and Mac over Tailscale (shared-box-setup.sh)
+# (in the desktop session: what arrives is opened or copied there)
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+ExecStart=/usr/bin/python3 %h/.config/quickshell/scripts/shared-box.py serve
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

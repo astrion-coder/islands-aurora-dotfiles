@@ -5,7 +5,8 @@ import qs.services
 import "fuzzy.js" as Fuzzy
 
 // File search in your home folder (fd: skips hidden and git-ignored files; fzf ranks
-// the matches). Enter opens the file in its default app.
+// the matches). Enter opens the file in its default app; Ctrl+Enter sends it to one of
+// your devices over Taildrop, or into the Shared Box (SendMode.qml).
 Mode {
     id: root
 
@@ -15,7 +16,7 @@ Mode {
 
     prompt: "files"
     placeholder: "search files…"
-    hint: indexed ? "" : "finding your files…"
+    hint: indexed ? "Enter opens it, Ctrl+Enter sends it to your phone or Mac" : "finding your files…"
 
     function opened() {
         indexed = false;
@@ -41,8 +42,14 @@ Mode {
     function activate(row, how) {
         if (!row)
             return;
+        const path = row.title.replace(/^~/, Quickshell.env("HOME"));
+        if (how === "ctrl") {
+            Launcher.sendFile = path;
+            Launcher.enter("send");
+            return;
+        }
         Launcher.close();
-        Quickshell.execDetached(["xdg-open", row.title.replace(/^~/, Quickshell.env("HOME"))]);
+        Quickshell.execDetached(["xdg-open", path]);
     }
 
     Timer {

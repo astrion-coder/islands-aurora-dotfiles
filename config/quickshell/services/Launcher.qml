@@ -6,11 +6,12 @@ import Quickshell.Io
 
 // The launcher (Raycast-style, replaces rofi): which menu is open. Hyprland's keys call
 //   qs ipc call launcher toggle <menu>
-// with menu = main | clipboard | emoji | files | calc | qr | windows | system | screenshot |
-// record | wallpaper ("record" is the screenshot menu with a recording chosen; "qr": the QR
-// codes and links found in screenshots).
-// Any launcher key pressed while it's open closes it. Esc in a menu opened from the
-// main menu goes back to the main menu.
+// with menu = main | clipboard | emoji | files | calc | qr | shared | windows | system |
+// screenshot | record | wallpaper ("record" is the screenshot menu with a recording chosen;
+// "qr": the QR codes and links found in screenshots; "shared": the Shared Box; "send", a
+// file to a device, is entered from Files or the Shared Box).
+// Any launcher key pressed while it's open closes it. Esc in a menu opened from another
+// one (the main menu, mostly) goes back to it.
 Singleton {
     id: root
 
@@ -22,25 +23,30 @@ Singleton {
     property string screenName: ""      // the screen it's on
     property real grow: 0               // 0 = the island's shape, 1 = the launcher's
     property var islands: ({})          // each screen's island, by screen name
-    property bool fromMain: false
+    property bool fromMain: false       // (opened from another menu: Esc goes back to it)
+    property var trail: []              // the menus Esc goes back through
+    property string sendFile: ""        // the file the "send" menu sends (SendMode.qml)
 
     function show(menu) {
         mode = menu;
+        trail = [];
         fromMain = false;
         open = true;
         shown = true;
     }
 
-    // from the main menu: Esc comes back
+    // from another menu: Esc comes back
     function enter(menu) {
+        trail = trail.concat([mode]);
         mode = menu;
         fromMain = true;
     }
 
     function back() {
-        if (fromMain) {
-            mode = "main";
-            fromMain = false;
+        if (trail.length > 0) {
+            mode = trail[trail.length - 1];
+            trail = trail.slice(0, -1);
+            fromMain = trail.length > 0;
         } else {
             close();
         }

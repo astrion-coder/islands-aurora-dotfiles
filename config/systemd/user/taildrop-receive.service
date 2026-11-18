@@ -1,0 +1,12 @@
+[Unit]
+Description=Taildrop: take in files sent to this PC, into Downloads and the Shared Box (shared-box-setup.sh)
+PartOf=graphical-session.target
+After=graphical-session.target shared-box.service
+
+[Service]
+ExecStart=%h/.config/quickshell/scripts/taildrop-receive.sh
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=graphical-session.target
