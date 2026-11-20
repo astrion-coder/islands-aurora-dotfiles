@@ -54,8 +54,6 @@ tailscale
 kitty
 dolphin
 okular
-zathura
-zathura-pdf-mupdf
 firefox
 neovim
 bpytop

@@ -121,7 +121,7 @@ else
 fi
 printf '%s' "$wallpaper" > "$HOME/.cache/wallpaper-theme.last"
 
-# matugen writes every themed file (shell, borders, kitty, GTK, Qt, KDE, zathura, ...).
+# matugen writes every themed file (shell, borders, kitty, GTK, Qt, KDE, ...).
 # Its reload hooks need a running desktop, so they may complain here; that's fine.
 matugen image "$wallpaper" --mode dark --source-color-index 0 --continue-on-error >/dev/null 2>&1 || true
 [ -f "$HOME/.config/quickshell/colors.css" ] || die "theme generation failed (is matugen installed?)"
@@ -137,7 +137,9 @@ say "Applying app settings"
 for app in dolphinrc okularrc; do
     kwriteconfig6 --file "$app" --group UiSettings --key ColorScheme Matugen
 done
-# Okular: pale highlighters (they read well on the dark, lightness-inverted pages)
+# Okular: pages as printed (white paper, black text; no recolouring), soft yellow and
+# green highlighters
+kwriteconfig6 --file okularpartrc --group Document --key ChangeColors false
 kwriteconfig6 --file okularpartrc --group Reviews --key QuickAnnotationTools \
     "$(cat "$REPO/extras/okular-annotation-tools.txt")"
 # GTK dark preference + theme (also read by Firefox and portals)
@@ -151,8 +153,8 @@ dbus-run-session -- sh -c '
 # (ShowConnected is off too: it would load the tray icon back in as its dependency)
 dbus-run-session -- gsettings set org.blueman.general plugin-list "['!StatusIcon', '!ShowConnected']" 2>/dev/null \
     || warn "couldn't hide Blueman's tray icon; run: gsettings set org.blueman.general plugin-list \"['!StatusIcon', '!ShowConnected']\""
-# PDFs open in zathura (Okular stays available for annotating)
-xdg-mime default org.pwmt.zathura-pdf-mupdf.desktop application/pdf
+# PDFs open in Okular
+xdg-mime default okularApplication_pdf.desktop application/pdf
 
 # ---------------------------------------------------------------- 6. services
 say "Enabling services"

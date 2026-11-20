@@ -54,7 +54,3 @@ output_path = '~/.config/qt6ct/colors/matugen.conf'
 [templates.bpytop]
 input_path  = '~/.config/matugen/templates/bpytop.theme'
 output_path = '~/.config/bpytop/themes/matugen.theme'
-
-[templates.zathura]
-input_path  = '~/.config/matugen/templates/zathurarc'
-output_path = '~/.config/zathura/zathurarc'

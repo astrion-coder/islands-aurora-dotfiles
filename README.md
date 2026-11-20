@@ -146,8 +146,8 @@ Options:
 4. **Generates the theme:** uses the first image in `~/Pictures/Wallpapers`, or generates a soft
    gradient if there isn't one. [matugen](https://github.com/InioX/matugen) turns that image into
    a palette, which fills in every themed file.
-5. **Applies app settings:** sets the dark GTK/KDE preferences, makes zathura the PDF viewer, and
-   sets up Okular's highlighters.
+5. **Applies app settings:** sets the dark GTK/KDE preferences, makes Okular the PDF viewer, and
+   sets up its highlighters.
 6. **Enables services:** NetworkManager, Bluetooth, the polkit agent, a daily exchange-rate update for the
    calculator, and the SDDM login screen. Calendar sync is installed but stays off (no
    server, no Tailscale) until you set it up yourself, as above.
@@ -577,8 +577,8 @@ and notifications update right away.
 | Shell prompt / plugins | `ZSH_THEME` and `plugins` in `~/.zshrc`; your own aliases in `~/.zshrc.local` |
 | Login screen | `~/.config/sddm-theme/islands-aurora/Main.qml`, then `sudo ~/.config/sddm-theme/install.sh` |
 
-Fonts: the bar, launcher, notifications, and the login and lock screens use *Noto Sans*
-(`noto-fonts`); emoji use *Noto Color Emoji* (`noto-fonts-emoji`). zathura uses
+Fonts: the bar, launcher, notifications and the lock screen use *Noto Sans*
+(`noto-fonts`); emoji use *Noto Color Emoji* (`noto-fonts-emoji`). The login screen uses
 *DroidSansM Nerd Font* (`otf-droid-nerd`). Qt/KDE apps use *Noto Sans 9* (set in
 qt5ct/qt6ct). GTK apps and kitty keep their defaults (Adwaita Sans for GTK, the system
 monospace font for kitty).
