@@ -307,15 +307,20 @@ web page, which on a phone installs as an app.
   newest first, on every device at once, each with where it came from: links to open,
   *Copy*, *Download* for files, *Remove*.
 - **On this PC:** `Super+I` (or *Shared Box* in the launcher). Type and press `Enter` to
-  send it to all your devices (`Shift+Enter`: and stay). Below is what's in the box:
+  send it to all your devices (`Shift+Enter`: and stay). Before you type, the top row is
+  *Send a file…*: it finds a file on this PC (like `Super+F`), and `Enter` puts it in the
+  box (`Shift+Enter`: and pick another; `Esc` goes back). Files you've copied (`Ctrl+C` in
+  Dolphin) get a row of their own, *Send the copied file*. Below is what's in the box:
   `Enter` opens a link or file or pastes text where you were, `Alt+1` only copies,
   `Shift+Delete` takes it out of the box everywhere. What arrives from another device
   shows as a notification: click it to open the link (or copy the text, or open the file).
 - **Files** go through the box too, with no other app: send them from the page (or, on
   Android, share them to *Shared Box* from any app). They land in this PC's `~/Downloads`
   (a name that's taken gets a number), show as a notification and in the box, and your
-  other devices can download them from there. To send a file from this PC: find it with
-  `Super+F` and press `Ctrl+Enter`; it goes in the box, to download on your phone or Mac.
+  other devices can download them from there. To send a file from this PC: *Send a file…*
+  in the box (`Super+I`), copy it in Dolphin and pick *Send the copied file* there, or find
+  it with `Super+F` and press `Ctrl+Enter`. It goes in the box, to download on your phone
+  or Mac.
 
 What's in the box is kept in `~/.local/share/shared-box/items.json` (the last 300, readable
 only by you). Files stay where they are (in `~/Downloads`, for the ones from your other

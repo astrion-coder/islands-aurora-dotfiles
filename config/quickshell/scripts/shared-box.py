@@ -10,8 +10,12 @@
                                    downloads for its files. On Android it installs as an
                                    app that's in the share sheet (text, links and files).
   shared-box.py add TEXT           put text or a link in the box, from this PC
-  shared-box.py add-file FILE...   put files from this PC in the box, to download on your
-                                   other devices (a notification says how it went)
+  shared-box.py add-file [--quiet] FILE...
+                                   put files from this PC in the box, to download on your
+                                   other devices (a notification says how it went, unless
+                                   --quiet: then only an error, on stderr)
+  shared-box.py copied             the files copied on this PC (Ctrl+C in Dolphin...), from
+                                   the clipboard: their paths, each ending in a NUL
   shared-box.py remove ID          take one out (for every device)
 
 What's in the box: $XDG_DATA_HOME/shared-box/items.json (~/.local/share; only you can read
@@ -936,21 +940,44 @@ def tell(title, body, transient):
                    + (["-e"] if transient else []) + ["--", title, html.escape(body)])
 
 
-def add_files(paths):
+def add_files(paths, quiet=False):
     """Files from this PC into the box, for your other devices to download (the
-    launcher's Ctrl+Enter), with a notification of how it went."""
+    launcher), with a notification of how it went (quiet: none)."""
     names = []
     for path in paths:
         name = Path(path).name
         try:
             print(call("POST", "/api/items", {"file": os.path.abspath(path)})["id"])
         except SystemExit as e:
-            tell(f"Couldn't put {name} in the Shared Box", str(e.code), False)
+            if not quiet:
+                tell(f"Couldn't put {name} in the Shared Box", str(e.code), False)
             raise
         names.append(name)
+    if quiet:
+        return
     tell(f"In the Shared Box: {names[0]}" if len(names) == 1 else f"In the Shared Box: {len(names)} files",
          "Download it on your phone or Mac, in the box" if len(names) == 1
          else "Download them on your phone or Mac, in the box", True)
+
+
+def copied():
+    """The files copied on this PC (Dolphin and other file managers put them on the
+    clipboard as file:// addresses), each path ending in a NUL; nothing if it holds
+    something else."""
+    def paste(*args):
+        try:
+            return subprocess.run(["wl-paste", *args], capture_output=True, text=True, timeout=3).stdout
+        except (OSError, subprocess.TimeoutExpired):
+            return ""
+
+    if "text/uri-list" not in paste("--list-types").split():
+        return
+    for line in paste("--no-newline", "--type", "text/uri-list").splitlines():
+        address = urllib.parse.urlsplit(line.strip())
+        if address.scheme == "file" and address.netloc in ("", "localhost"):
+            path = urllib.parse.unquote(address.path)
+            if os.path.isfile(path):
+                sys.stdout.write(path + "\0")
 
 
 def main():
@@ -960,8 +987,11 @@ def main():
         serve()
     elif command == "add" and len(args) >= 2:
         print(call("POST", "/api/items", {"text": " ".join(args[1:])})["id"])
-    elif command == "add-file" and len(args) >= 2:
-        add_files(args[1:])
+    elif command == "add-file" and len(args) >= 2 and args[1:] != ["--quiet"]:
+        quiet = args[1] == "--quiet"
+        add_files(args[2:] if quiet else args[1:], quiet)
+    elif command == "copied" and len(args) == 1:
+        copied()
     elif command == "remove" and len(args) == 2:
         call("DELETE", f"/api/items/{args[1]}")
     else:

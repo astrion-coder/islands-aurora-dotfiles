@@ -23,6 +23,7 @@ PanelWindow {
         calc: calcMode,
         qr: qrMode,
         shared: boxMode,
+        boxfile: boxFileMode,
         windows: windowsMode,
         system: systemMode
     })
@@ -140,6 +141,7 @@ PanelWindow {
     CalcMode { id: calcMode; query: root.mode === calcMode ? search.text : "" }
     QrMode { id: qrMode; query: root.mode === qrMode ? search.text : "" }
     BoxMode { id: boxMode; query: root.mode === boxMode ? search.text : "" }
+    FilesMode { id: boxFileMode; forBox: true; query: root.mode === boxFileMode ? search.text : "" }
     WindowsMode { id: windowsMode; query: root.mode === windowsMode ? search.text : "" }
     SystemMode { id: systemMode; query: root.mode === systemMode ? search.text : "" }
 
@@ -441,8 +443,10 @@ PanelWindow {
 
                 Label {
                     x: 14
+                    width: parent.width - 28        // (a long hint ends in "…" inside the box)
                     anchors.verticalCenter: parent.verticalCenter
                     text: root.mode?.hint ?? ""
+                    elide: Text.ElideRight
                     color: Theme.subtle
                     font.pixelSize: 13
                 }

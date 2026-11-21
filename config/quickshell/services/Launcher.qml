@@ -8,7 +8,8 @@ import Quickshell.Io
 //   qs ipc call launcher toggle <menu>
 // with menu = main | clipboard | emoji | files | calc | qr | shared | windows | system |
 // screenshot | record | wallpaper ("record" is the screenshot menu with a recording chosen;
-// "qr": the QR codes and links found in screenshots; "shared": the Shared Box).
+// "qr": the QR codes and links found in screenshots; "shared": the Shared Box; "boxfile", a
+// file for the box, is entered from it).
 // Any launcher key pressed while it's open closes it. Esc in a menu opened from another
 // one (the main menu, mostly) goes back to it.
 Singleton {
