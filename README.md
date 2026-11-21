@@ -146,8 +146,8 @@ Options:
 4. **Generates the theme:** uses the first image in `~/Pictures/Wallpapers`, or generates a soft
    gradient if there isn't one. [matugen](https://github.com/InioX/matugen) turns that image into
    a palette, which fills in every themed file.
-5. **Applies app settings:** sets the dark GTK/KDE preferences, makes Okular the PDF viewer, and
-   sets up its highlighters.
+5. **Applies app settings:** sets the dark GTK/KDE preferences, makes Okular the PDF viewer (and
+   sets up its highlighters) and Dolphin the app folders open in.
 6. **Enables services:** NetworkManager, Bluetooth, the polkit agent, a daily exchange-rate update for the
    calculator, and the SDDM login screen. Calendar sync is installed but stays off (no
    server, no Tailscale) until you set it up yourself, as above.

@@ -155,6 +155,9 @@ dbus-run-session -- gsettings set org.blueman.general plugin-list "['!StatusIcon
     || warn "couldn't hide Blueman's tray icon; run: gsettings set org.blueman.general plugin-list \"['!StatusIcon', '!ShowConnected']\""
 # PDFs open in Okular
 xdg-mime default okularApplication_pdf.desktop application/pdf
+# Folders open in Dolphin ("Open folder" in notifications, ...): with no default, kitty's
+# "open" entry gets them and they open in a terminal
+xdg-mime default org.kde.dolphin.desktop inode/directory
 
 # ---------------------------------------------------------------- 6. services
 say "Enabling services"

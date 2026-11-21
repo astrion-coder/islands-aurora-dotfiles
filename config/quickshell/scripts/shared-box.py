@@ -515,7 +515,8 @@ def notify(item):
         shown = "~/" + str(where.relative_to(HOME)) if where.is_relative_to(HOME) else str(where)
         title = f"Received {text}"
         body = html.escape(f"From {source}, in {shown}")
-        actions = [("default", "Open"), ("folder", "Open folder")]
+        # (the file itself, in its app; the island shows "default" as the click, not a button)
+        actions = [("default", "Open"), ("file", "Open")]
     elif kind == "link":
         title = f"Link from {source}"
         body = f'<a href="{html.escape(text)}">{html.escape(text)}</a>'
@@ -541,10 +542,10 @@ def notify(item):
             target = item["path"] if kind == "file" else text if kind == "link" else None
             if kind == "text":
                 subprocess.run(["wl-copy", "--", text], env=env)
+        elif action == "file" and kind == "file":
+            target = item["path"]
         elif action == "open" and url:
             target = url[0]
-        elif action == "folder":
-            target = str(Path(item["path"]).parent)
         elif action == "copy":
             subprocess.run(["wl-copy", "--", text], env=env)
         if target:
