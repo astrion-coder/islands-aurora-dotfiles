@@ -23,7 +23,6 @@ PanelWindow {
         calc: calcMode,
         qr: qrMode,
         shared: boxMode,
-        send: sendMode,
         windows: windowsMode,
         system: systemMode
     })
@@ -141,7 +140,6 @@ PanelWindow {
     CalcMode { id: calcMode; query: root.mode === calcMode ? search.text : "" }
     QrMode { id: qrMode; query: root.mode === qrMode ? search.text : "" }
     BoxMode { id: boxMode; query: root.mode === boxMode ? search.text : "" }
-    SendMode { id: sendMode; query: root.mode === sendMode ? search.text : "" }
     WindowsMode { id: windowsMode; query: root.mode === windowsMode ? search.text : "" }
     SystemMode { id: systemMode; query: root.mode === systemMode ? search.text : "" }
 

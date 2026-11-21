@@ -5,7 +5,7 @@
 #
 #   your phone / Mac --HTTPS, tailnet only--> tailscale serve (:443)
 #     --> shared-box.py (its socket, this PC only) <-- the launcher's Shared Box (Super+I)
-#   your phone / Mac --Taildrop--> taildrop-receive.sh --> ~/Downloads, and the box
+#   (files go the same way: uploaded from the page, they land in ~/Downloads)
 #
 # Needs this machine on your tailnet (sudo systemctl enable --now tailscaled; sudo tailscale up).
 set -euo pipefail
@@ -21,10 +21,14 @@ host=$(tailscale status --json | python3 -c 'import json, sys; print(json.load(s
 socket="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/shared-box.sock"
 
 # ---------------------------------------------------------------- this PC's side
-say "Starting the Shared Box and the Taildrop receiver..."
+say "Starting the Shared Box..."
+# (the box used to take files in over Taildrop: that receiver is no longer needed)
+if systemctl --user cat taildrop-receive.service >/dev/null 2>&1; then
+    systemctl --user disable --now taildrop-receive.service >/dev/null 2>&1 || true
+fi
 systemctl --user daemon-reload
-systemctl --user enable shared-box.service taildrop-receive.service >/dev/null
-systemctl --user restart shared-box.service taildrop-receive.service
+systemctl --user enable shared-box.service >/dev/null
+systemctl --user restart shared-box.service
 for _ in $(seq 50); do
     [ -S "$socket" ] && break
     sleep 0.1
@@ -59,14 +63,15 @@ cat <<INFO
 
 On your phone (with Tailscale on):
   Android: open $url in Chrome, then menu (⋮) > Add to home screen > Install. "Shared Box"
-           is then in the share menu of any app: share a link or text to it.
+           is then in the share menu of any app: share a link, text or files to it.
   iPhone:  open it in Safari, then Share > Add to Home Screen.
 On the Mac: open it in a browser (in Safari: File > Add to Dock, for an app of its own).
 
 On this PC: Super+I (or "Shared Box" in Super+R). Type and press Enter to send; what comes
 in from your other devices shows as a notification.
 
-Files: send them to "$(tailscale status --json | python3 -c 'import json, sys; print(json.load(sys.stdin)["Self"]["HostName"])')" with Taildrop (Tailscale in the share menu on your
-phone or Mac): they land in ~/Downloads and show in the box. To send one from this PC:
-find it with Super+F and press Ctrl+Enter.
+Files: on your phone or Mac, press Files on the page (or, on a computer, drop or paste
+them there; on Android, share them to Shared Box). They land in ~/Downloads here, and
+your other devices can download them from the box. From this PC: find a file with Super+F
+and press Ctrl+Enter, then download it from the box on your phone or Mac.
 INFO

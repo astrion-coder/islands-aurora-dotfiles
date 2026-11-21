@@ -8,8 +8,8 @@ import "fuzzy.js" as Fuzzy
 // Mac over Tailscale. Type and press Enter to send it to them all (Shift+Enter: and stay
 // here); the list is what's in the box, the newest first, and narrows down as you type.
 // Enter on one opens a link or a file, or pastes text where you were; Alt+1 only copies it
-// (a file: its path); Ctrl+Enter on a file sends it to a device over Taildrop;
-// Shift+Delete takes it out of the box, on every device.
+// (a file: its path); Shift+Delete takes it out of the box, on every device. Files get in
+// from the Files menu (Ctrl+Enter), and from your devices' page.
 Mode {
     id: root
 
@@ -27,7 +27,7 @@ Mode {
     hint: problem !== "" ? problem
         : !running ? "The Shared Box isn't running: set it up with ~/.config/quickshell/scripts/shared-box-setup.sh"
         : current?.send ? "Enter sends it to all your devices, Shift+Enter sends it and stays here"
-        : current?.item?.kind === "file" ? "Enter opens it, Ctrl+Enter sends it to a device, Alt+1 copies its path, Shift+Delete takes it out"
+        : current?.item?.kind === "file" ? "Enter opens it, Alt+1 copies its path, Shift+Delete takes it out of the box"
         : current?.item?.kind === "link" ? "Enter opens it, Alt+1 copies it, Shift+Delete takes it out of the box"
         : current ? "Enter pastes it where you were, Alt+1 only copies it, Shift+Delete takes it out of the box"
         : "Type to send text or a link to all your devices"
@@ -86,10 +86,7 @@ Mode {
             remover.running = true;
             items = items.filter(i => i.id !== it.id);
         } else if (it.kind === "file") {
-            if (how === "ctrl") {
-                Launcher.sendFile = it.path;
-                Launcher.enter("send");
-            } else if (how === "alt") {
+            if (how === "alt") {
                 Launcher.deliver('wl-copy -- "$1"', it.path, true);
             } else {
                 Launcher.close();

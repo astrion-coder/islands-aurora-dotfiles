@@ -5,18 +5,19 @@ import qs.services
 import "fuzzy.js" as Fuzzy
 
 // File search in your home folder (fd: skips hidden and git-ignored files; fzf ranks
-// the matches). Enter opens the file in its default app; Ctrl+Enter sends it to one of
-// your devices over Taildrop, or into the Shared Box (SendMode.qml).
+// the matches). Enter opens the file in its default app; Ctrl+Enter puts it in the
+// Shared Box, to download on your phone or Mac (scripts/shared-box.py add-file).
 Mode {
     id: root
 
     readonly property string index: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/quickshell-files.txt"
+    readonly property string box: Quickshell.shellPath("scripts/shared-box.py")
     property bool indexed: false
     property bool pending: false
 
     prompt: "files"
     placeholder: "search files…"
-    hint: indexed ? "Enter opens it, Ctrl+Enter sends it to your phone or Mac" : "finding your files…"
+    hint: indexed ? "Enter opens it, Ctrl+Enter puts it in the Shared Box for your phone and Mac" : "finding your files…"
 
     function opened() {
         indexed = false;
@@ -43,13 +44,11 @@ Mode {
         if (!row)
             return;
         const path = row.title.replace(/^~/, Quickshell.env("HOME"));
-        if (how === "ctrl") {
-            Launcher.sendFile = path;
-            Launcher.enter("send");
-            return;
-        }
         Launcher.close();
-        Quickshell.execDetached(["xdg-open", path]);
+        if (how === "ctrl")
+            Quickshell.execDetached([box, "add-file", path]);      // (a notification says how it went)
+        else
+            Quickshell.execDetached(["xdg-open", path]);
     }
 
     Timer {

@@ -20,7 +20,7 @@ Mode {
         { title: "Search Files", icon: "system-search", menu: "files", meta: "files find folder documents open" },
         { title: "Calculator", icon: "accessories-calculator", menu: "calc", meta: "calculator calc math convert units" },
         { title: "Links & QR Codes", icon: "view-barcode-qr", menu: "qr", meta: "qr codes links urls scanned screenshot barcode" },
-        { title: "Shared Box", icon: "document-send", menu: "shared", meta: "shared box send share link text phone android mac iphone tailscale taildrop inbox devices" },
+        { title: "Shared Box", icon: "document-send", menu: "shared", meta: "shared box send share link text phone android mac iphone tailscale files upload download transfer inbox devices" },
         { title: "Switch Windows", icon: "preferences-system-windows", menu: "windows", meta: "windows switch window focus" },
         { title: "Screenshot", icon: "camera-photo", menu: "screenshot", meta: "screenshot screen capture snip grab print picture" },
         { title: "Record Screen", icon: "media-record", menu: "record", meta: "record recording screen video capture screencast" },

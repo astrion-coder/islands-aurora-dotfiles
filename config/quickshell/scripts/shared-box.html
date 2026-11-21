@@ -11,8 +11,8 @@
 <link rel="icon" href="/icon-192.png">
 <link rel="apple-touch-icon" href="/icon-192.png">
 <!-- The Shared Box (shared-box.py serves it, with the desktop's colours filled in below):
-     text and links sent from any of your devices show on all of them, live; files sent to
-     the PC over Taildrop show here to download. -->
+     text, links and files sent from any of your devices show on all of them, live. Files
+     sent from here land in the PC's Downloads folder; any device can download them. -->
 <style>
 :root {
     /*COLORS*/
@@ -112,6 +112,18 @@ li.new { animation: in .3s ease-out; }
 footer { margin: 22px 4px 0; color: var(--muted); font-size: 13px; display: flex; gap: 12px; align-items: flex-start; }
 footer p { margin: 0; flex: 1; }
 footer b { color: var(--subtle); }
+#uploads:empty { display: none; }
+#uploads:not(:empty) + #items { margin-top: 8px; }
+.progress { height: 4px; border-radius: 2px; margin: 8px 0 6px; background: var(--line); overflow: hidden; }
+.progress div { height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width .2s; }
+li.failed .progress div { background: var(--error); }
+li.failed .meta .from { color: var(--error); }
+.drop {
+    position: fixed; inset: 10px; z-index: 2; display: grid; place-items: center;
+    border: 2px dashed var(--accent); border-radius: 22px; pointer-events: none;
+    background: color-mix(in srgb, var(--base) 82%, transparent);
+    color: var(--accent); font-size: 18px; font-weight: 600;
+}
 .toast {
     position: fixed; left: 50%; bottom: max(24px, env(safe-area-inset-bottom)); transform: translate(-50%, 20px);
     background: var(--accent); color: var(--ink); font-weight: 600; font-size: 14px;
@@ -134,18 +146,22 @@ footer b { color: var(--subtle); }
         <div class="row">
             <span id="hint" class="hint"></span>
             <button type="button" id="paste" hidden>Paste</button>
+            <button type="button" id="attach" title="Send files to all your devices">Files</button>
             <button type="submit" id="send" class="primary">Send</button>
         </div>
+        <input type="file" id="picker" multiple hidden>
     </form>
 
+    <ul id="uploads" aria-live="polite"></ul>
     <ul id="items" aria-live="polite"></ul>
     <p id="empty" class="empty" hidden>Nothing here yet. What you send shows up on all your devices.</p>
 
     <footer>
-        <p>Files: send them to <b id="host"></b> with Taildrop (<i>Tailscale</i> in the share menu); they show up here too.</p>
+        <p>Files sent from here land in <b id="host"></b>'s Downloads folder, and any of your devices can download them.</p>
         <button id="clear" class="danger" hidden>Clear all</button>
     </footer>
 </main>
+<div id="drop" class="drop" hidden>Drop to send to all your devices</div>
 <div id="toast" class="toast" role="status"></div>
 
 <script>
@@ -408,14 +424,155 @@ if (navigator.clipboard && navigator.clipboard.readText) {
     });
 }
 
+// ---------- files: sent one at a time, each with its progress (on the PC they land in
+// Downloads, and every device can download them from the box)
+const uploads = $("#uploads"), waiting = [];
+let sending = null;
+
+function sendFiles(files) {
+    for (const file of files)
+        waiting.push(upload(file));
+    next();
+}
+
+function next() {
+    if (!sending && waiting.length)
+        (sending = waiting.shift()).start();
+}
+
+function upload(file) {
+    const name = file.name || "file";
+    const li = el("li", "new");
+    const meta = el("div", "meta");
+    const status = el("span", "from"), done = el("span");
+    meta.append(status, el("span", "dot"), done);
+    const content = el("div", "content"), row = el("div", "file");
+    row.append(el("span", "name", name), el("span", "size", size(file.size)));
+    const bar = el("div", "progress"), fill = el("div");
+    bar.append(fill);
+    content.append(row, bar);
+    const actions = el("div", "actions");
+    li.append(meta, content, actions);
+    uploads.append(li);
+
+    let xhr = null;
+    const job = {
+        // waiting its turn: Cancel just takes it off the list
+        wait() {
+            li.classList.remove("failed");
+            status.textContent = "Waiting";
+            done.textContent = "to send";
+            fill.style.width = "0";
+            actions.replaceChildren(button("Cancel", () => {
+                const i = waiting.indexOf(job);
+                if (i >= 0) waiting.splice(i, 1);
+                li.remove();
+            }, "remove danger"));
+        },
+        start() {
+            li.classList.remove("failed");
+            status.textContent = "Sending";
+            done.textContent = "0%";
+            actions.replaceChildren(button("Cancel", () => xhr && xhr.abort(), "remove danger"));
+            xhr = new XMLHttpRequest();
+            xhr.open("POST", "/api/files");
+            xhr.setRequestHeader("X-Shared-Box", "1");
+            xhr.setRequestHeader("X-File-Name", encodeURIComponent(name));
+            xhr.upload.onprogress = event => {
+                if (!event.lengthComputable) return;
+                const part = event.total ? event.loaded / event.total : 1;
+                fill.style.width = `${(part * 100).toFixed(1)}%`;
+                done.textContent = `${Math.floor(part * 100)}% of ${size(event.total)}`;
+            };
+            xhr.onload = () => {
+                if (xhr.status === 201) {
+                    li.remove();
+                    toast(`Sent ${name}`);
+                    refresh();
+                    finish();
+                } else {
+                    fail(xhr.responseText.trim() || `Couldn't send it (${xhr.status})`);
+                }
+            };
+            xhr.onerror = () => fail("The connection dropped");
+            xhr.onabort = () => { li.remove(); finish(); };
+            xhr.send(file);
+        },
+    };
+
+    function finish() {
+        sending = null;
+        next();
+    }
+
+    function fail(why) {
+        li.classList.add("failed");
+        status.textContent = "Couldn't send it";
+        done.textContent = why;
+        actions.replaceChildren(
+            button("Try again", () => { job.wait(); waiting.push(job); next(); }),
+            button("Dismiss", () => li.remove(), "remove danger"));
+        finish();
+    }
+
+    job.wait();
+    return job;
+}
+
+$("#attach").addEventListener("click", () => $("#picker").click());
+$("#picker").addEventListener("change", event => {
+    sendFiles([...event.target.files]);
+    event.target.value = "";
+});
+
+// dropped anywhere on the page
+let dragging = 0;
+const hasFiles = event => [...(event.dataTransfer?.types || [])].includes("Files");
+document.addEventListener("dragenter", event => {
+    if (!hasFiles(event)) return;
+    event.preventDefault();
+    dragging++;
+    $("#drop").hidden = false;
+});
+document.addEventListener("dragover", event => { if (hasFiles(event)) event.preventDefault(); });
+document.addEventListener("dragleave", event => {
+    if (!hasFiles(event)) return;
+    if (--dragging <= 0) { dragging = 0; $("#drop").hidden = true; }
+});
+document.addEventListener("drop", event => {
+    if (!hasFiles(event)) return;
+    event.preventDefault();
+    dragging = 0;
+    $("#drop").hidden = true;
+    sendFiles([...event.dataTransfer.files]);
+});
+
+// pasted (a copied file or picture): it's sent; pasted text goes in the field as usual
+document.addEventListener("paste", event => {
+    const files = [...(event.clipboardData?.files || [])];
+    if (files.length) {
+        event.preventDefault();
+        sendFiles(files);
+    }
+});
+
+// (leaving while a file is still going: the browser asks first)
+addEventListener("beforeunload", event => {
+    if (sending || waiting.length) event.preventDefault();
+});
+
 // ---------- start
 setHint();
+if (!touch)
+    field.placeholder = "Text or a link (or drop or paste files), for all your devices";
 render();
 listen();
 document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
 setInterval(() => { for (const t of document.querySelectorAll("time")) t.textContent = when(Date.parse(t.dateTime) / 1000); }, 30000);
-if (new URLSearchParams(location.search).has("shared")) {
-    toast("Added to the box");
+const params = new URLSearchParams(location.search);
+if (params.has("shared")) {
+    const files = Number(params.get("files")) || 0;
+    toast(files > 1 ? `${files} files added to the box` : files ? "The file is in the box" : "Added to the box");
     history.replaceState(null, "", "/");
 }
 if ("serviceWorker" in navigator)

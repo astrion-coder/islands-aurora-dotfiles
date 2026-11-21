@@ -170,7 +170,7 @@ Options:
 | `Super+Shift+P` / `Print` | Screenshot and recording menu, out of the island (while recording: shows it, `Enter` stops it) |
 | `Shift+Print` / `Alt+Print` / `Ctrl+Print` | Screenshot of an area / a window / the screen, straight away |
 | `Super+W` | Wallpaper picker, out of the island |
-| `Super+I` | The [Shared Box](#the-shared-box): send text and links to your phone and Mac |
+| `Super+I` | The [Shared Box](#the-shared-box): send text, links and files to your phone and Mac |
 | `Super+Escape` | Lock screen |
 | `Super+M` | Log out |
 | `Super+H/J/K/L` or arrows | Move focus |
@@ -230,7 +230,8 @@ launcher hangs below it, then it all closes back into the frame.
   - *Emoji:* search by name or keyword ("lol"). `Enter` types the emoji into the window you
     were in (and copies it), `Alt+1` only copies it.
   - *Files:* searches your home folder (skipping hidden and git-ignored files); `Enter` opens,
-    `Ctrl+Enter` sends it to your phone or Mac (see [The Shared Box](#the-shared-box)).
+    `Ctrl+Enter` puts it in the Shared Box, to download on your phone or Mac (see
+    [The Shared Box](#the-shared-box)).
   - *Calculator:* the result updates as you type. `Enter` pastes it into the window you were
     in (and copies it), `Alt+1` only copies it, `Ctrl+Enter` saves it to the history
     underneath.
@@ -301,22 +302,27 @@ web page, which on a phone installs as an app.
   and Mac). On a phone it installs as an app, and on Android it's then in every app's
   share menu.
 - **The page:** type or paste and *Send* (on a computer `Enter` sends, `Shift+Enter` is a
-  new line). Everything in the box shows, the newest first, on every device at once, each
-  with where it came from: links to open, *Copy*, *Download* for files, *Remove*.
+  new line). *Files* sends files (on a computer you can also drop them on the page or
+  paste them), each with its progress and a *Cancel*. Everything in the box shows, the
+  newest first, on every device at once, each with where it came from: links to open,
+  *Copy*, *Download* for files, *Remove*.
 - **On this PC:** `Super+I` (or *Shared Box* in the launcher). Type and press `Enter` to
   send it to all your devices (`Shift+Enter`: and stay). Below is what's in the box:
   `Enter` opens a link or file or pastes text where you were, `Alt+1` only copies,
   `Shift+Delete` takes it out of the box everywhere. What arrives from another device
   shows as a notification: click it to open the link (or copy the text, or open the file).
-- **Files** go over Taildrop: on your phone or Mac, share a file and pick *Tailscale* →
-  this PC. It lands in `~/Downloads` (a name that's taken gets a number), shows as a
-  notification and in the box, where your other devices can download it too. To send a
-  file from this PC: find it with `Super+F` (or pick it in the box) and press `Ctrl+Enter`,
-  then pick a device (it needs to be online, with Tailscale on) or *The Shared Box*.
+- **Files** go through the box too, with no other app: send them from the page (or, on
+  Android, share them to *Shared Box* from any app). They land in this PC's `~/Downloads`
+  (a name that's taken gets a number), show as a notification and in the box, and your
+  other devices can download them from there. To send a file from this PC: find it with
+  `Super+F` and press `Ctrl+Enter`; it goes in the box, to download on your phone or Mac.
 
 What's in the box is kept in `~/.local/share/shared-box/items.json` (the last 300, readable
-only by you); files stay where they are, and the box only points at them. The page uses
-the desktop's colours. Like the calendar, it only works while this PC is on.
+only by you). Files stay where they are (in `~/Downloads`, for the ones from your other
+devices); the box only points at them, so *Remove* takes a file out of the box but leaves
+it on this PC. A file is only saved once it has all arrived, and the box keeps 1 GB of the
+disk free. The page uses the desktop's colours. Like the calendar, it only works while
+this PC is on.
 
 ## The dynamic island
 
@@ -461,17 +467,14 @@ The [Shared Box](#the-shared-box) reaches your phone and Mac the same way, over
 [Tailscale](https://tailscale.com), without any cloud: this machine runs the box
 ([`shared-box.py`](config/quickshell/scripts/shared-box.py)) on a socket only it can open,
 Tailscale makes it reachable over HTTPS from your own devices (and nobody else; only
-devices signed in as you get in), and files go over Taildrop, which a small receiver
-([`taildrop-receive.sh`](config/quickshell/scripts/taildrop-receive.sh)) takes in as they
-arrive.
+devices signed in as you get in). Files go the same way, sent from the box's page.
 
 1. **This machine on your tailnet**, if it isn't yet (it is, once the calendar sync is
    set up): `sudo systemctl enable --now tailscaled`, then `sudo tailscale up` and log in
    with the same account as your phone and Mac. In the Tailscale admin console, *DNS*
    should have MagicDNS and HTTPS certificates turned on.
-2. **Run** `~/.config/quickshell/scripts/shared-box-setup.sh`. It starts the box and the
-   Taildrop receiver (the user services `shared-box` and `taildrop-receive`), serves the
-   box to your tailnet on port 443, and prints its address (like
+2. **Run** `~/.config/quickshell/scripts/shared-box-setup.sh`. It starts the box (the
+   user service `shared-box`), serves it to your tailnet on port 443, and prints its address (like
    `https://yourmachine.your-tailnet.ts.net/`) with a QR code of it to scan with your
    phone. Tailscale only lets root point it at the box's socket, so the script asks for
    your password once; the setting stays through restarts. OpenSnitch needs no rule for
@@ -479,20 +482,19 @@ arrive.
    it.
 3. **On the Android phone** (with Tailscale on): scan the QR code, or open the address in
    Chrome, then menu (`⋮`) → *Add to home screen* → *Install*. *Shared Box* is then an
-   app, and in every app's share menu: share a link or text to it and it lands in the box.
-   For files: share a file → *Tailscale* → this machine.
+   app, and in every app's share menu: share a link, text or files to it and they land in
+   the box. (Installed before it took files? Remove the app and install it again, so
+   Android sees that it takes them now.)
 4. **On the Mac:** open the address in a browser and keep it handy (in Safari: File →
-   *Add to Dock*, for an app of its own). For files: share them with Taildrop (in Finder,
-   Share → *Taildrop*) to this machine.
+   *Add to Dock*, for an app of its own). Drop files on the page, or press *Files*.
 5. **On the iPhone** (with Tailscale on): open the address in Safari, then Share → *Add to
-   Home Screen*. For files: share a file → *Tailscale* → this machine.
+   Home Screen*. Send files with *Files* on the page.
 
 What you send shows on every device at once; what comes in from your phone or Mac shows
 here as a notification. Files sent to this machine land in `~/Downloads` and show in the
-box, where your other devices can download them. Files from this machine (`Super+F`, or
-in the box: `Ctrl+Enter`) go straight to the device you pick, which has to be on, with
-Tailscale running: Taildrop doesn't keep them for later. Like the calendar, the box is
-only there while this machine is on.
+box, where your other devices can download them. Files from this machine (`Super+F`, then
+`Ctrl+Enter`) go in the box, to download on your phone or Mac whenever you like. Like the
+calendar, the box is only there while this machine is on.
 
 **One box per machine.** The box lives on the machine that runs it. Run the setup script
 on one machine; your phone and Mac use the address it gives.
@@ -500,7 +502,7 @@ on one machine; your phone and Mac use the address it gives.
 #### Turning it off
 
 ```sh
-systemctl --user disable --now shared-box.service taildrop-receive.service
+systemctl --user disable --now shared-box.service
 sudo tailscale serve --https=443 off
 ```
 

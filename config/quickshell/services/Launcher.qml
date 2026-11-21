@@ -8,8 +8,7 @@ import Quickshell.Io
 //   qs ipc call launcher toggle <menu>
 // with menu = main | clipboard | emoji | files | calc | qr | shared | windows | system |
 // screenshot | record | wallpaper ("record" is the screenshot menu with a recording chosen;
-// "qr": the QR codes and links found in screenshots; "shared": the Shared Box; "send", a
-// file to a device, is entered from Files or the Shared Box).
+// "qr": the QR codes and links found in screenshots; "shared": the Shared Box).
 // Any launcher key pressed while it's open closes it. Esc in a menu opened from another
 // one (the main menu, mostly) goes back to it.
 Singleton {
@@ -25,7 +24,6 @@ Singleton {
     property var islands: ({})          // each screen's island, by screen name
     property bool fromMain: false       // (opened from another menu: Esc goes back to it)
     property var trail: []              // the menus Esc goes back through
-    property string sendFile: ""        // the file the "send" menu sends (SendMode.qml)
 
     function show(menu) {
         mode = menu;
